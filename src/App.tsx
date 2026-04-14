@@ -89,6 +89,10 @@ const TRANSLATIONS: any = {
     faltaCasa: 'Falta da equipe da Casa',
     faltaVisitante: 'Falta da equipe Visitante',
     copiado: 'Histórico copiado para a área de transferência!',
+    sons: 'Sons',
+    somTempoJogo: 'Som de fim de jogo',
+    somTempoPosse: 'Som de fim de posse',
+    testarSom: 'Testar Som',
   },
   en: {
     placar: 'SCOREBOARD',
@@ -125,6 +129,10 @@ const TRANSLATIONS: any = {
     faltaCasa: 'Home Team Foul',
     faltaVisitante: 'Away Team Foul',
     copiado: 'History copied to clipboard!',
+    sons: 'Sounds',
+    somTempoJogo: 'Game end sound',
+    somTempoPosse: 'Shot clock sound',
+    testarSom: 'Test Sound',
   },
   es: {
     placar: 'MARCADOR',
@@ -161,6 +169,10 @@ const TRANSLATIONS: any = {
     faltaCasa: 'Falta del equipo Local',
     faltaVisitante: 'Falta del equipo Visitante',
     copiado: '¡Historial copiado al portapapeles!',
+    sons: 'Sonidos',
+    somTempoJogo: 'Sonido de fin de juego',
+    somTempoPosse: 'Sonido de fin de posesión',
+    testarSom: 'Probar Sonido',
   }
 };
 
@@ -180,6 +192,8 @@ export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [gameMode, setGameMode] = useState<keyof typeof MODES>('3x3');
   const [wakeLockEnabled, setWakeLockEnabled] = useState(false);
+  const [gameEndSoundEnabled, setGameEndSoundEnabled] = useState(true);
+  const [shotClockSoundEnabled, setShotClockSoundEnabled] = useState(true);
   
   const [gameTime, setGameTime] = useState(MODES[gameMode].gameTime);
   const [shotClock, setShotClock] = useState(MODES[gameMode].shotClock);
@@ -290,10 +304,11 @@ export default function App() {
   const updateScore = (team: Team, amount: number) => {
     if (gameTime === 0 && hasStarted.current) return;
     saveToHistory(`${team === 'home' ? t.casa : t.visitante} +${amount} pts`);
+    const limit = gameMode === '3x3' ? MAX_SCORE : 999;
     if (team === 'home') {
-      setHomeScore(prev => Math.min(MAX_SCORE, prev + amount));
+      setHomeScore(prev => Math.min(limit, prev + amount));
     } else {
-      setVisitorScore(prev => Math.min(MAX_SCORE, prev + amount));
+      setVisitorScore(prev => Math.min(limit, prev + amount));
     }
     // Reset shot clock on score
     setShotClock(MODES[gameMode].shotClock);
@@ -358,7 +373,7 @@ export default function App() {
         setGameTime(prev => {
           if (prev <= 0) {
             setIsRunning(false);
-            playBuzzer();
+            if (gameEndSoundEnabled) playBuzzer();
             return 0;
           }
           return prev - 1;
@@ -366,7 +381,7 @@ export default function App() {
 
         setShotClock(prev => {
           if (prev <= 1) {
-            playBuzzer();
+            if (shotClockSoundEnabled) playBuzzer();
             return 0;
           }
           return prev - 1;
@@ -382,15 +397,18 @@ export default function App() {
   }, [isRunning, t.inicioPartida]);
 
   useEffect(() => {
-    const isGameOver = homeScore >= MAX_SCORE || visitorScore >= MAX_SCORE || (gameTime === 0 && hasStarted.current);
+    const is3x3 = gameMode === '3x3';
+    const scoreLimitReached = is3x3 && (homeScore >= MAX_SCORE || visitorScore >= MAX_SCORE);
+    const isGameOver = scoreLimitReached || (gameTime === 0 && hasStarted.current);
+    
     if (isGameOver) {
       if (isRunning || (gameTime === 0 && hasStarted.current && !history.some(h => h.description.includes(t.fimJogo)))) {
         saveToHistory(`${t.fimJogo} - ${homeName} ${homeScore} x ${visitorScore} ${visitorName}`);
       }
       setIsRunning(false);
-      if (gameTime === 0 && isRunning) playBuzzer();
+      if (gameTime === 0 && isRunning && gameEndSoundEnabled) playBuzzer();
     }
-  }, [homeScore, visitorScore, gameTime, t.fimJogo, t.placar, isRunning, history, homeName, visitorName]);
+  }, [homeScore, visitorScore, gameTime, t.fimJogo, t.placar, isRunning, history, homeName, visitorName, gameMode]);
 
   return (
     <div className="h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center p-3 select-none overflow-hidden transition-colors duration-300">
@@ -399,7 +417,7 @@ export default function App() {
         <div className="bg-[#FF6B35] p-1 rounded-full shadow-md">
           <Dribbble className="w-4 h-4 text-white" />
         </div>
-        <h1 className="text-xl font-black tracking-tighter text-[#FF6B35]">3X3</h1>
+        <h1 className="text-xl font-black tracking-tighter text-[#FF6B35]">Basquete</h1>
         <div className="ml-auto text-[10px] font-bold text-text-secondary uppercase tracking-widest bg-bg-card px-2 py-1 rounded-full shadow-sm">
           {MODES[gameMode].label}
         </div>
@@ -424,16 +442,28 @@ export default function App() {
               </motion.div>
 
               {/* Shot Clock */}
-              <motion.div 
-                className="flex-1 bg-bg-card rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative cursor-pointer"
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setShotClock(MODES[gameMode].shotClock)}
-              >
-                <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest absolute top-2">{t.posse}</span>
-                <div className={`text-4xl font-black text-[#FF6B35] mt-2 font-mono ${shotClock <= 3 && shotClock > 0 ? 'animate-pulse' : ''}`}>
-                  {shotClock.toString().padStart(2, '0')}
-                </div>
-              </motion.div>
+              <div className="flex-1 flex flex-col gap-2">
+                <motion.div 
+                  className="flex-1 bg-bg-card rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative cursor-pointer"
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShotClock(12)}
+                >
+                  <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest absolute top-2">{t.posse}</span>
+                  <div className={`text-4xl font-black text-[#FF6B35] mt-2 font-mono ${shotClock <= 3 && shotClock > 0 ? 'animate-pulse' : ''}`}>
+                    {shotClock.toString().padStart(2, '0')}
+                  </div>
+                </motion.div>
+                
+                {(gameMode === 'fiba' || gameMode === 'nba') && (
+                  <motion.button
+                    className="h-10 bg-bg-card rounded-xl shadow-sm border border-border text-[#FF6B35] font-black text-xs flex items-center justify-center"
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShotClock(24)}
+                  >
+                    24s
+                  </motion.button>
+                )}
+              </div>
             </div>
 
             {/* Teams Row */}
@@ -445,7 +475,9 @@ export default function App() {
                 score={homeScore}
                 onAdd1={() => updateScore('home', 1)}
                 onAdd2={() => updateScore('home', 2)}
+                onAdd3={() => updateScore('home', 3)}
                 t={t}
+                gameMode={gameMode}
               />
               <TeamCard 
                 label={t.visitante}
@@ -454,7 +486,9 @@ export default function App() {
                 score={visitorScore}
                 onAdd1={() => updateScore('visitor', 1)}
                 onAdd2={() => updateScore('visitor', 2)}
+                onAdd3={() => updateScore('visitor', 3)}
                 t={t}
+                gameMode={gameMode}
               />
             </div>
 
@@ -465,12 +499,14 @@ export default function App() {
                 fouls={homeFouls}
                 onAddFoul={() => updateFouls('home')}
                 t={t}
+                gameMode={gameMode}
               />
               <FoulCard 
                 label={<>{t.faltas}<br/>{t.visitante}</>}
                 fouls={visitorFouls}
                 onAddFoul={() => updateFouls('visitor')}
                 t={t}
+                gameMode={gameMode}
               />
             </div>
 
@@ -619,6 +655,50 @@ export default function App() {
                   />
                 </button>
               </div>
+
+              {/* Sound Settings */}
+              <div className="space-y-4 pt-4 border-t border-border">
+                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                  <Volume2 className="w-3 h-3 text-[#FF6B35]" /> {t.sons}
+                </label>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-text-primary">{t.somTempoJogo}</span>
+                    <button
+                      onClick={() => setGameEndSoundEnabled(!gameEndSoundEnabled)}
+                      className={`w-12 h-6 rounded-full transition-colors relative ${gameEndSoundEnabled ? 'bg-[#FF6B35]' : 'bg-text-secondary'}`}
+                    >
+                      <motion.div 
+                        className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm"
+                        animate={{ x: gameEndSoundEnabled ? 24 : 0 }}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-text-primary">{t.somTempoPosse}</span>
+                    <button
+                      onClick={() => setShotClockSoundEnabled(!shotClockSoundEnabled)}
+                      className={`w-12 h-6 rounded-full transition-colors relative ${shotClockSoundEnabled ? 'bg-[#FF6B35]' : 'bg-text-secondary'}`}
+                    >
+                      <motion.div 
+                        className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm"
+                        animate={{ x: shotClockSoundEnabled ? 24 : 0 }}
+                      />
+                    </button>
+                  </div>
+
+                  <motion.button
+                    className="w-full py-3 bg-bg-primary text-[#FF6B35] rounded-xl text-xs font-black flex items-center justify-center gap-2 border border-border"
+                    whileTap={{ scale: 0.98 }}
+                    onClick={playBuzzer}
+                  >
+                    <Volume2 className="w-4 h-4" />
+                    {t.testarSom}
+                  </motion.button>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
@@ -732,7 +812,7 @@ function TimeEditor({ currentTime, onSave, onClose, t }: any) {
   );
 }
 
-function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, t }: any) {
+function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t, gameMode }: any) {
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(name);
 
@@ -740,6 +820,8 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, t }: any) 
     onNameChange((tempName || name).toUpperCase());
     setIsEditing(false);
   };
+
+  const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
 
   return (
     <div className="bg-bg-card rounded-[24px] p-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-center gap-2 transition-colors duration-300">
@@ -771,47 +853,80 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, t }: any) 
         <span className="text-[9px] font-bold text-text-secondary">{t.pts}</span>
       </div>
 
-      <div className="flex gap-2 w-full">
-        <motion.button 
-          className="flex-1 h-10 rounded-lg bg-[#FFF0EB] dark:bg-[#FF6B35]/10 text-[#FF6B35] font-black text-lg flex items-center justify-center shadow-sm"
-          whileTap={{ scale: 0.95 }}
-          onClick={onAdd1}
-        >
-          +1
-        </motion.button>
-        <motion.button 
-          className="flex-1 h-10 rounded-lg bg-[#FF6B35] text-white font-black text-lg flex items-center justify-center shadow-lg"
-          whileTap={{ scale: 0.95 }}
-          onClick={onAdd2}
-        >
-          +2
-        </motion.button>
+      <div className="flex flex-col gap-2 w-full">
+        {isFibaNba ? (
+          <>
+            <motion.button 
+              className="w-full h-10 rounded-lg bg-[#FF6B35] text-white font-black text-lg flex items-center justify-center shadow-lg"
+              whileTap={{ scale: 0.95 }}
+              onClick={onAdd2}
+            >
+              +2
+            </motion.button>
+            <div className="flex gap-2">
+              <motion.button 
+                className="flex-1 h-10 rounded-lg bg-[#FFF0EB] dark:bg-[#FF6B35]/10 text-[#FF6B35] font-black text-lg flex items-center justify-center shadow-sm"
+                whileTap={{ scale: 0.95 }}
+                onClick={onAdd1}
+              >
+                +1
+              </motion.button>
+              <motion.button 
+                className="flex-1 h-10 rounded-lg bg-[#FFF0EB] dark:bg-[#FF6B35]/10 text-[#FF6B35] font-black text-lg flex items-center justify-center shadow-sm"
+                whileTap={{ scale: 0.95 }}
+                onClick={onAdd3}
+              >
+                +3
+              </motion.button>
+            </div>
+          </>
+        ) : (
+          <div className="flex gap-2 w-full">
+            <motion.button 
+              className="flex-1 h-10 rounded-lg bg-[#FFF0EB] dark:bg-[#FF6B35]/10 text-[#FF6B35] font-black text-lg flex items-center justify-center shadow-sm"
+              whileTap={{ scale: 0.95 }}
+              onClick={onAdd1}
+            >
+              +1
+            </motion.button>
+            <motion.button 
+              className="flex-1 h-10 rounded-lg bg-[#FF6B35] text-white font-black text-lg flex items-center justify-center shadow-lg"
+              whileTap={{ scale: 0.95 }}
+              onClick={onAdd2}
+            >
+              +2
+            </motion.button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function FoulCard({ label, fouls, onAddFoul, t }: any) {
-  const isBonus = fouls >= 7;
+function FoulCard({ label, fouls, onAddFoul, t, gameMode }: any) {
+  const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
+  const bonusThreshold = isFibaNba ? 5 : 7;
+  const isBonus = fouls >= bonusThreshold;
+  
   return (
     <div 
-      className={`rounded-[24px] p-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-start gap-2 cursor-pointer h-full transition-colors duration-300 ${isBonus ? 'bg-[#FF6B35]' : 'bg-bg-card'}`}
+      className={`rounded-[24px] p-2 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-start gap-1 cursor-pointer transition-colors duration-300 ${isBonus ? 'bg-[#FF6B35]' : 'bg-bg-card'}`}
       onClick={onAddFoul}
     >
-      <div className="w-full flex justify-between items-center min-h-[2.5rem]">
-        <span className={`text-[9px] font-bold uppercase tracking-widest leading-tight text-left ${isBonus ? 'text-white/80' : 'text-text-secondary'}`}>{label}</span>
-        <span className={`text-xl font-black font-mono ${isBonus ? 'text-white' : 'text-text-primary'}`}>{fouls.toString().padStart(2, '0')}</span>
+      <div className="w-full flex justify-between items-center min-h-[1.5rem]">
+        <span className={`text-[8px] font-bold uppercase tracking-widest leading-tight text-left ${isBonus ? 'text-white/80' : 'text-text-secondary'}`}>{label}</span>
+        <span className={`text-lg font-black font-mono ${isBonus ? 'text-white' : 'text-text-primary'}`}>{fouls.toString().padStart(2, '0')}</span>
       </div>
       <div className="flex gap-1 justify-center w-full">
-        {[...Array(7)].map((_, i) => (
+        {[...Array(bonusThreshold)].map((_, i) => (
           <div 
             key={i} 
-            className={`flex-1 h-1.5 rounded-full transition-colors ${i < fouls ? (isBonus ? 'bg-white' : 'bg-[#FF6B35]') : (isBonus ? 'bg-white/20' : 'bg-border')}`} 
+            className={`flex-1 h-1 rounded-full transition-colors ${i < fouls ? (isBonus ? 'bg-white' : 'bg-[#FF6B35]') : (isBonus ? 'bg-white/20' : 'bg-border')}`} 
           />
         ))}
       </div>
       <div className="text-left w-full">
-        <span className={`text-[8px] font-bold uppercase tracking-widest ${isBonus ? 'text-white' : 'text-text-secondary'}`}>
+        <span className={`text-[7px] font-bold uppercase tracking-widest ${isBonus ? 'text-white' : 'text-text-secondary'}`}>
           • {t.bonus}
         </span>
       </div>

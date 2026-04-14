@@ -1,0 +1,6 @@
+{
+  "name": "Marcador 3X3",
+  "description": "A professional 3x3 basketball scoreboard with game timer, shot clock, scoring, and team fouls tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

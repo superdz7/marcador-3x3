@@ -207,7 +207,8 @@ export default function App() {
         setShotClock(prev => {
           if (prev <= 1) {
             playBuzzer();
-            return INITIAL_SHOT_CLOCK;
+            setIsRunning(false); // Pause game on shot clock violation
+            return 0;
           }
           return prev - 1;
         });
@@ -234,7 +235,7 @@ export default function App() {
   return (
     <div className="h-screen bg-[#F2F4F7] text-[#1A1C1E] font-sans flex flex-col items-center p-3 select-none overflow-hidden">
       {/* Header - Compact */}
-      <header className="w-full max-w-md flex items-center gap-2 mb-3 px-2">
+      <header className="w-full max-w-2xl flex items-center gap-2 mb-3 px-2">
         <div className="bg-[#FF6B35] p-1 rounded-full shadow-md">
           <Dribbble className="w-4 h-4 text-white" />
         </div>
@@ -242,7 +243,7 @@ export default function App() {
       </header>
 
       {/* Main Scoreboard Area */}
-      <main className="w-full max-w-md flex-1 flex flex-col gap-3 min-h-0">
+      <main className="w-full max-w-2xl flex-1 flex flex-col gap-3 min-h-0">
         {activeTab === 'placar' ? (
           <>
             {/* Timer & Shot Clock Row */}
@@ -393,7 +394,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Bottom Navigation - More Compact */}
-      <nav className="w-full max-w-md bg-white rounded-t-[32px] shadow-[0_-10px_30px_rgba(0,0,0,0.03)] px-4 py-2 flex justify-between items-center shrink-0">
+      <nav className="w-full max-w-2xl bg-white rounded-t-[32px] shadow-[0_-10px_30px_rgba(0,0,0,0.03)] px-4 py-2 flex justify-between items-center shrink-0">
         <NavButton 
           active={activeTab === 'placar'} 
           onClick={() => setActiveTab('placar')}
@@ -486,7 +487,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2 }: any) {
   const [tempName, setTempName] = useState(name);
 
   const handleSave = () => {
-    onNameChange(tempName || name);
+    onNameChange((tempName || name).toUpperCase());
     setIsEditing(false);
   };
 
@@ -498,7 +499,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2 }: any) {
           <div className="flex gap-1 mt-1">
             <input 
               autoFocus
-              className="w-full text-center bg-[#F2F4F7] rounded-md text-sm font-black text-[#1A1C1E] py-1 outline-[#FF6B35]"
+              className="w-full text-center bg-[#F2F4F7] rounded-md text-sm font-black text-[#1A1C1E] py-1 outline-[#FF6B35] uppercase"
               value={tempName}
               onChange={(e) => setTempName(e.target.value)}
               onBlur={handleSave}
@@ -507,7 +508,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2 }: any) {
           </div>
         ) : (
           <h2 
-            className="text-base font-black text-[#1A1C1E] leading-tight truncate max-w-[120px] cursor-pointer hover:text-[#FF6B35] transition-colors"
+            className="text-base font-black text-[#1A1C1E] leading-tight truncate w-full text-center cursor-pointer hover:text-[#FF6B35] transition-colors uppercase"
             onClick={() => setIsEditing(true)}
           >
             {name}

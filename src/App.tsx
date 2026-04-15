@@ -126,6 +126,7 @@ const TRANSLATIONS: any = {
     jogadoresInsuficientes: 'Jogadores insuficientes. Cadastre-os na aba de estatísticas.',
     fechar: 'Fechar',
     limparSorteio: 'Limpar Sorteio',
+    tempoNaoEditavel: 'O tempo só pode ser alterado antes do início do jogo.',
   },
   en: {
     placar: 'SCOREBOARD',
@@ -184,6 +185,7 @@ const TRANSLATIONS: any = {
     jogadoresInsuficientes: 'Insufficient players. Register them in the stats tab.',
     fechar: 'Close',
     limparSorteio: 'Clear Draft',
+    tempoNaoEditavel: 'Time can only be changed before the game starts.',
   },
   es: {
     placar: 'MARCADOR',
@@ -242,6 +244,7 @@ const TRANSLATIONS: any = {
     jogadoresInsuficientes: 'Jugadores insuficientes. Regístrelos en la pestaña de estadísticas.',
     fechar: 'Cerrar',
     limparSorteio: 'Limpiar Sorteo',
+    tempoNaoEditavel: 'El tiempo solo se puede cambiar antes de que comience el juego.',
   }
 };
 
@@ -706,9 +709,15 @@ export default function App() {
             <div className="flex gap-3 h-32 sm:h-40 md:h-48 shrink-0">
               {/* Game Timer */}
               <motion.div 
-                className="flex-[3.5] bg-bg-card rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] border-y-4 border-[#FF6B35] flex flex-col items-center justify-center relative overflow-hidden cursor-pointer [container-type:inline-size]"
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setIsEditingTime(true)}
+                className={`flex-[3.5] bg-bg-card rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] border-y-4 border-[#FF6B35] flex flex-col items-center justify-center relative overflow-hidden [container-type:inline-size] ${hasStarted.current ? 'cursor-default' : 'cursor-pointer'}`}
+                whileTap={hasStarted.current ? {} : { scale: 0.98 }}
+                onClick={() => {
+                  if (hasStarted.current) {
+                    setToast({ message: t.tempoNaoEditavel, type: 'error' });
+                  } else {
+                    setIsEditingTime(true);
+                  }
+                }}
               >
                 <span className="text-[9px] font-bold text-text-secondary uppercase tracking-widest absolute top-2">{t.tempoJogo}</span>
                 <div className="text-[26cqw] font-bold tracking-tighter text-text-primary mt-4 font-display leading-none">
@@ -999,13 +1008,14 @@ export default function App() {
                   {(Object.keys(MODES) as Array<keyof typeof MODES>).map((mode) => (
                     <button
                       key={mode}
+                      disabled={hasStarted.current}
                       onClick={() => {
                         setGameMode(mode);
                         setGameTime(MODES[mode].gameTime);
                         setShotClock(MODES[mode].shotClock);
                         setIsRunning(false);
                       }}
-                      className={`py-2 rounded-xl text-xs font-bold transition-all ${gameMode === mode ? 'bg-[#FF6B35] text-white shadow-md' : 'bg-bg-primary text-text-secondary'}`}
+                      className={`py-2 rounded-xl text-xs font-bold transition-all ${gameMode === mode ? 'bg-[#FF6B35] text-white shadow-md' : 'bg-bg-primary text-text-secondary'} ${hasStarted.current ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {MODES[mode].label}
                     </button>

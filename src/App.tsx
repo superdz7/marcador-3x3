@@ -795,7 +795,7 @@ export default function App() {
             </div>
 
             {/* Controls Row */}
-            <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-2 shrink-0">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-2 shrink-0">
               <ControlButton 
                 icon={<Undo2 className="w-5 h-5" />} 
                 label={t.desfazer} 
@@ -813,12 +813,6 @@ export default function App() {
               </motion.button>
 
               <ControlButton 
-                icon={<Users className="w-5 h-5" />} 
-                label={t.sorteio} 
-                onClick={handleDraft}
-              />
-
-              <ControlButton 
                 icon={<RotateCcw className="w-5 h-5" />} 
                 label={t.reiniciar} 
                 onClick={() => setShowResetConfirm(true)}
@@ -829,16 +823,25 @@ export default function App() {
           <div className="flex-1 flex flex-col gap-4 p-1 sm:p-2 overflow-y-auto no-scrollbar">
             <div className="flex justify-between items-center px-2">
               <h2 className="text-lg font-black text-text-primary">{t.estatisticas}</h2>
-              {drawnTeams.length > 0 && (
+              <div className="flex gap-2">
                 <motion.button 
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  onClick={() => setDrawnTeams([])}
-                  className="text-[10px] font-bold text-[#FF6B35] uppercase tracking-widest bg-bg-card px-3 py-1.5 rounded-full border border-border shadow-sm active:scale-95 transition-transform"
+                  onClick={handleDraft}
+                  className="text-[10px] font-bold text-[#FF6B35] uppercase tracking-widest bg-bg-card px-3 py-1.5 rounded-full border border-border shadow-sm active:scale-95 transition-transform flex items-center gap-1.5"
                 >
-                  {t.limparSorteio}
+                  <Users className="w-3 h-3" />
+                  {t.sorteio}
                 </motion.button>
-              )}
+                {drawnTeams.length > 0 && (
+                  <motion.button 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    onClick={() => setDrawnTeams([])}
+                    className="text-[10px] font-bold text-[#FF6B35] uppercase tracking-widest bg-bg-card px-3 py-1.5 rounded-full border border-border shadow-sm active:scale-95 transition-transform"
+                  >
+                    {t.limparSorteio}
+                  </motion.button>
+                )}
+              </div>
             </div>
 
             {/* Add Player Form */}

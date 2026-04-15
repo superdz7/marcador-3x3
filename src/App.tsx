@@ -706,7 +706,7 @@ export default function App() {
             <div className="flex gap-3 h-32 sm:h-40 md:h-48 shrink-0">
               {/* Game Timer */}
               <motion.div 
-                className="flex-[3.5] bg-bg-card rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border-y-4 border-[#FF6B35] flex flex-col items-center justify-center relative overflow-hidden cursor-pointer [container-type:inline-size]"
+                className="flex-[3.5] bg-bg-card rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] border-y-4 border-[#FF6B35] flex flex-col items-center justify-center relative overflow-hidden cursor-pointer [container-type:inline-size]"
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setIsEditingTime(true)}
               >
@@ -719,7 +719,7 @@ export default function App() {
               {/* Shot Clock */}
               <div className="flex-1 flex flex-col gap-2">
                 <motion.div 
-                  className="flex-1 bg-bg-card rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative cursor-pointer"
+                  className="flex-1 bg-bg-card rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-center justify-center relative cursor-pointer"
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setShotClock(12)}
                 >
@@ -1175,7 +1175,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Bottom Navigation - More Compact */}
-      <nav className="w-full max-w-2xl bg-bg-card rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.03)] px-4 py-2 flex justify-between items-center shrink-0 transition-colors duration-300">
+      <nav className="w-full max-w-2xl bg-bg-card rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] px-4 py-2 flex justify-between items-center shrink-0 transition-colors duration-300">
         <NavButton 
           active={activeTab === 'placar'} 
           onClick={() => setActiveTab('placar')}
@@ -1275,7 +1275,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
   const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
 
   return (
-    <div className="bg-bg-card rounded-xl p-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-center gap-2 transition-colors duration-300 md:min-h-[220px] md:justify-between">
+    <div className="bg-bg-card rounded-xl p-3 shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-center gap-2 transition-colors duration-300 md:min-h-[220px] md:justify-between">
       <div className="text-center w-full">
         <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest">{label}</span>
         {isEditing ? (
@@ -1361,7 +1361,7 @@ function FoulCard({ label, fouls, onAddFoul, t, gameMode }: any) {
   
   return (
     <div 
-      className={`rounded-xl p-2 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-start gap-1 cursor-pointer transition-colors duration-300 ${isBonus ? 'bg-[#FF6B35]' : 'bg-bg-card'}`}
+      className={`rounded-xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-start gap-1 cursor-pointer transition-colors duration-300 ${isBonus ? 'bg-[#FF6B35]' : 'bg-bg-card'}`}
       onClick={onAddFoul}
     >
       <div className="w-full flex justify-between items-center min-h-[1.5rem]">
@@ -1388,7 +1388,7 @@ function FoulCard({ label, fouls, onAddFoul, t, gameMode }: any) {
 function ControlButton({ icon, label, onClick, disabled }: any) {
   return (
     <motion.button
-      className={`flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-bg-card shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-border transition-colors duration-300 ${disabled ? 'opacity-50 grayscale' : ''}`}
+      className={`flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-bg-card shadow-[0_10px_40px_rgba(0,0,0,0.12)] border border-border transition-colors duration-300 ${disabled ? 'opacity-50 grayscale' : ''}`}
       whileHover={disabled ? {} : { scale: 1.05, backgroundColor: 'var(--color-bg-primary)' }}
       whileTap={disabled ? {} : { scale: 0.95 }}
       onClick={onClick}
@@ -1425,7 +1425,7 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
                      player.stats.ft.made;
   
   return (
-    <div className="bg-bg-card rounded-xl p-4 shadow-md space-y-4 border border-border/30">
+    <div className="bg-bg-card rounded-xl p-4 shadow-xl space-y-4 border border-border/30">
       <div className="flex justify-between items-center border-b border-border pb-2">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-[#FF6B35] rounded-full flex items-center justify-center text-white font-black text-xs">

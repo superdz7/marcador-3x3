@@ -285,6 +285,8 @@ export default function App() {
   const [newPlayerName, setNewPlayerName] = useState('');
   const [newPlayerNumber, setNewPlayerNumber] = useState('');
   const hasStarted = useRef(false);
+  const buzzerPlayedRef = useRef(false);
+  const shotClockBuzzerPlayedRef = useRef(false);
   const wakeLockRef = useRef<any>(null);
 
   const t = TRANSLATIONS[language];
@@ -374,16 +376,21 @@ export default function App() {
     setShowResetConfirm(false);
   };
 
-  const playBuzzer = (isGameEnd = false) => {
+  const playBuzzer = async (isGameEnd = false) => {
     console.log('BUZZER!', isGameEnd ? 'Game End' : 'Shot Clock');
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+
     const masterGain = ctx.createGain();
     const filter = ctx.createBiquadFilter();
     
     if (isGameEnd) {
       const duration = 1.5;
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(2000, ctx.currentTime);
+      filter.type = 'highpass';
+      filter.frequency.setValueAtTime(400, ctx.currentTime);
       
       masterGain.gain.setValueAtTime(0, ctx.currentTime);
       masterGain.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 0.05);
@@ -393,12 +400,13 @@ export default function App() {
       masterGain.connect(filter);
       filter.connect(ctx.destination);
 
-      const baseFreq = 110;
-      [1, 1.5, 2, 2.5, 3].forEach(harmonic => {
+      // Higher base frequency for a more "piercing" buzzer
+      const baseFreq = 220; 
+      [1, 1.2, 1.5, 2, 2.5, 3, 4].forEach(harmonic => {
         const osc = ctx.createOscillator();
         osc.type = harmonic % 2 === 0 ? 'square' : 'sawtooth';
         osc.frequency.setValueAtTime(baseFreq * harmonic, ctx.currentTime);
-        osc.detune.setValueAtTime(Math.random() * 20 - 10, ctx.currentTime);
+        osc.detune.setValueAtTime(Math.random() * 30 - 15, ctx.currentTime);
         osc.connect(masterGain);
         osc.start();
         osc.stop(ctx.currentTime + duration);
@@ -603,9 +611,7 @@ export default function App() {
       }
       timerRef.current = setInterval(() => {
         setGameTime(prev => {
-          if (prev <= 0) {
-            setIsRunning(false);
-            if (gameEndSoundEnabled) playBuzzer(true);
+          if (prev <= 1) {
             return 0;
           }
           return prev - 1;
@@ -613,7 +619,6 @@ export default function App() {
 
         setShotClock(prev => {
           if (prev <= 1) {
-            if (shotClockSoundEnabled) playBuzzer(false);
             return 0;
           }
           return prev - 1;
@@ -628,19 +633,40 @@ export default function App() {
     };
   }, [isRunning, t.inicioPartida]);
 
+  // Game End and Buzzer Logic
   useEffect(() => {
     const is3x3 = gameMode === '3x3';
     const scoreLimitReached = is3x3 && (homeScore >= MAX_SCORE || visitorScore >= MAX_SCORE);
-    const isGameOver = scoreLimitReached || (gameTime === 0 && hasStarted.current);
+    const timeEnded = gameTime === 0 && hasStarted.current;
+    const isGameOver = scoreLimitReached || timeEnded;
     
     if (isGameOver) {
-      if (isRunning || (gameTime === 0 && hasStarted.current && !history.some(h => h.description.includes(t.fimJogo)))) {
+      if (isRunning || (timeEnded && !history.some(h => h.description.includes(t.fimJogo)))) {
         saveToHistory(`${t.fimJogo} - ${homeName} ${homeScore} x ${visitorScore} ${visitorName}`);
       }
       setIsRunning(false);
-      if (gameTime === 0 && isRunning && gameEndSoundEnabled) playBuzzer(true);
+      
+      if (timeEnded && !buzzerPlayedRef.current) {
+        if (gameEndSoundEnabled) playBuzzer(true);
+        buzzerPlayedRef.current = true;
+      }
     }
-  }, [homeScore, visitorScore, gameTime, t.fimJogo, t.placar, isRunning, history, homeName, visitorName, gameMode]);
+
+    if (gameTime > 0) {
+      buzzerPlayedRef.current = false;
+    }
+  }, [homeScore, visitorScore, gameTime, t.fimJogo, t.placar, isRunning, history, homeName, visitorName, gameMode, gameEndSoundEnabled]);
+
+  // Shot Clock Buzzer Logic
+  useEffect(() => {
+    if (shotClock === 0 && isRunning && !shotClockBuzzerPlayedRef.current) {
+      if (shotClockSoundEnabled) playBuzzer(false);
+      shotClockBuzzerPlayedRef.current = true;
+    }
+    if (shotClock > 0) {
+      shotClockBuzzerPlayedRef.current = false;
+    }
+  }, [shotClock, isRunning, shotClockSoundEnabled]);
 
   return (
     <div className="h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center p-2 sm:p-3 select-none overflow-hidden transition-colors duration-300">
@@ -1249,7 +1275,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
   const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
 
   return (
-    <div className="bg-bg-card rounded-xl p-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-center gap-2 transition-colors duration-300">
+    <div className="bg-bg-card rounded-xl p-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-center gap-2 transition-colors duration-300 md:min-h-[220px] md:justify-between">
       <div className="text-center w-full">
         <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest">{label}</span>
         {isEditing ? (

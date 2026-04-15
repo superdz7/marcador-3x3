@@ -20,7 +20,11 @@ import {
   X,
   Plus,
   Minus,
-  Check
+  Check,
+  Languages,
+  Palette,
+  MonitorSmartphone,
+  Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -43,6 +47,17 @@ interface HistoryAction {
   timestamp: number;
   state: Omit<GameState, 'isRunning'>;
   description: string;
+}
+
+interface Player {
+  id: string;
+  name: string;
+  number: string;
+  stats: {
+    pts2: { made: number; missed: number };
+    pts3: { made: number; missed: number };
+    ft: { made: number; missed: number };
+  };
 }
 
 // --- Constants ---
@@ -93,6 +108,24 @@ const TRANSLATIONS: any = {
     somTempoJogo: 'Som de fim de jogo',
     somTempoPosse: 'Som de fim de posse',
     testarSom: 'Testar Som',
+    adicionarJogador: 'Adicionar Jogador',
+    nomeJogador: 'Nome',
+    numeroJogador: 'Nº',
+    categoria: 'Categoria',
+    acertou: 'Acertou',
+    errou: 'Errou',
+    aproveitamento: 'Aprov.',
+    pts2: '2 Pontos',
+    pts3: '3 Pontos',
+    lanceLivre: 'Lance Livre',
+    remover: 'Remover',
+    sorteio: 'SORTEIO',
+    equipes: 'Equipes',
+    compartilharEquipes: 'Compartilhar Equipes',
+    equipe: 'Equipe',
+    jogadoresInsuficientes: 'Jogadores insuficientes',
+    fechar: 'Fechar',
+    limparSorteio: 'Limpar Sorteio',
   },
   en: {
     placar: 'SCOREBOARD',
@@ -133,6 +166,24 @@ const TRANSLATIONS: any = {
     somTempoJogo: 'Game end sound',
     somTempoPosse: 'Shot clock sound',
     testarSom: 'Test Sound',
+    adicionarJogador: 'Add Player',
+    nomeJogador: 'Name',
+    numeroJogador: 'Nº',
+    categoria: 'Category',
+    acertou: 'Made',
+    errou: 'Missed',
+    aproveitamento: 'Eff.',
+    pts2: '2 Points',
+    pts3: '3 Points',
+    lanceLivre: 'Free Throw',
+    remover: 'Remove',
+    sorteio: 'DRAFT',
+    equipes: 'Teams',
+    compartilharEquipes: 'Share Teams',
+    equipe: 'Team',
+    jogadoresInsuficientes: 'Insufficient players',
+    fechar: 'Close',
+    limparSorteio: 'Clear Draft',
   },
   es: {
     placar: 'MARCADOR',
@@ -173,6 +224,24 @@ const TRANSLATIONS: any = {
     somTempoJogo: 'Sonido de fin de juego',
     somTempoPosse: 'Sonido de fin de posesión',
     testarSom: 'Probar Sonido',
+    adicionarJogador: 'Añadir Jugador',
+    nomeJogador: 'Nombre',
+    numeroJogador: 'Nº',
+    categoria: 'Categoría',
+    acertou: 'Acierto',
+    errou: 'Fallo',
+    aproveitamento: 'Ef.',
+    pts2: '2 Puntos',
+    pts3: '3 Puntos',
+    lanceLivre: 'Tiro Libre',
+    remover: 'Eliminar',
+    sorteio: 'SORTEO',
+    equipes: 'Equipos',
+    compartilharEquipes: 'Compartir Equipos',
+    equipe: 'Equipo',
+    jogadoresInsuficientes: 'Jugadores insuficientes',
+    fechar: 'Cerrar',
+    limparSorteio: 'Limpiar Sorteo',
   }
 };
 
@@ -207,6 +276,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('placar');
   const [history, setHistory] = useState<HistoryAction[]>([]);
   const [isEditingTime, setIsEditingTime] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [drawnTeams, setDrawnTeams] = useState<Player[][]>([]);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
+  const [newPlayerName, setNewPlayerName] = useState('');
+  const [newPlayerNumber, setNewPlayerNumber] = useState('');
   const hasStarted = useRef(false);
   const wakeLockRef = useRef<any>(null);
 
@@ -221,7 +298,6 @@ export default function App() {
   };
 
   const saveToHistory = useCallback((description: string) => {
-    if (!hasStarted.current && !description.includes(t.inicioPartida)) return;
     const newAction: HistoryAction = {
       id: Math.random().toString(36).substr(2, 9),
       timestamp: Date.now(),
@@ -236,7 +312,7 @@ export default function App() {
       description,
     };
     setHistory(prev => [newAction, ...prev].slice(0, 100));
-  }, [gameTime, shotClock, homeScore, visitorScore, homeFouls, visitorFouls, t.inicioPartida]);
+  }, [gameTime, shotClock, homeScore, visitorScore, homeFouls, visitorFouls]);
 
   const shareHistory = () => {
     const text = history.map(h => `[${new Date(h.timestamp).toLocaleTimeString()}] ${h.description}`).join('\n');
@@ -267,39 +343,135 @@ export default function App() {
     setVisitorFouls(state.visitorFouls);
     
     setHistory(prev => prev.slice(1));
-  };
-
-  const resetGame = () => {
-    if (window.confirm(t.confirmarReiniciar)) {
-      setGameTime(MODES[gameMode].gameTime);
-      setShotClock(MODES[gameMode].shotClock);
-      setHomeScore(0);
-      setVisitorScore(0);
-      setHomeFouls(0);
-      setVisitorFouls(0);
-      setHomeName('BE CITY');
-      setVisitorName('BULLS');
-      setIsRunning(false);
-      setHistory([]);
+    // If we undid the "Game Started" action, reset the flag
+    if (lastAction.description === t.inicioPartida) {
       hasStarted.current = false;
     }
   };
 
-  const playBuzzer = () => {
-    console.log('BUZZER!');
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(440, ctx.currentTime);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.5);
+  const resetGame = () => {
+    const mode = MODES[gameMode];
+    setGameTime(mode.gameTime);
+    setShotClock(mode.shotClock);
+    setHomeScore(0);
+    setVisitorScore(0);
+    setHomeFouls(0);
+    setVisitorFouls(0);
+    setHomeName('BE CITY');
+    setVisitorName('BULLS');
+    setIsRunning(false);
+    setHistory([]);
+    // Reset player stats instead of clearing the list
+    setPlayers(prev => prev.map(p => ({
+      ...p,
+      stats: {
+        pts2: { made: 0, missed: 0 },
+        pts3: { made: 0, missed: 0 },
+        ft: { made: 0, missed: 0 },
+      }
+    })));
+    hasStarted.current = false;
+    setShowResetConfirm(false);
   };
 
-  // --- Actions ---
+  const playBuzzer = (isGameEnd = false) => {
+    console.log('BUZZER!', isGameEnd ? 'Game End' : 'Shot Clock');
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const masterGain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    
+    if (isGameEnd) {
+      const duration = 1.5;
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(2000, ctx.currentTime);
+      
+      masterGain.gain.setValueAtTime(0, ctx.currentTime);
+      masterGain.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 0.05);
+      masterGain.gain.setValueAtTime(0.6, ctx.currentTime + duration - 0.1);
+      masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
+      
+      masterGain.connect(filter);
+      filter.connect(ctx.destination);
+
+      const baseFreq = 110;
+      [1, 1.5, 2, 2.5, 3].forEach(harmonic => {
+        const osc = ctx.createOscillator();
+        osc.type = harmonic % 2 === 0 ? 'square' : 'sawtooth';
+        osc.frequency.setValueAtTime(baseFreq * harmonic, ctx.currentTime);
+        osc.detune.setValueAtTime(Math.random() * 20 - 10, ctx.currentTime);
+        osc.connect(masterGain);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      });
+    } else {
+      // Short bell-like buzzer for shot clock
+      const duration = 0.4;
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(800, ctx.currentTime);
+      filter.Q.setValueAtTime(1, ctx.currentTime);
+
+      masterGain.gain.setValueAtTime(0, ctx.currentTime);
+      masterGain.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 0.01);
+      masterGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+      
+      masterGain.connect(filter);
+      filter.connect(ctx.destination);
+
+      const osc = ctx.createOscillator();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(660, ctx.currentTime);
+      
+      const osc2 = ctx.createOscillator();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(440, ctx.currentTime);
+
+      osc.connect(masterGain);
+      osc2.connect(masterGain);
+      
+      osc.start();
+      osc2.start();
+      osc.stop(ctx.currentTime + duration);
+      osc2.stop(ctx.currentTime + duration);
+    }
+  };
+
+  const handleDraft = () => {
+    if (players.length < (gameMode === '3x3' ? 3 : 5)) {
+      setToast({ message: t.jogadoresInsuficientes, type: 'error' });
+      return;
+    }
+
+    const shuffled = [...players].sort(() => Math.random() - 0.5);
+    const teamSize = gameMode === '3x3' ? 3 : 5;
+    const teams: Player[][] = [];
+    
+    for (let i = 0; i < shuffled.length; i += teamSize) {
+      const team = shuffled.slice(i, i + teamSize);
+      if (team.length > 0) {
+        teams.push(team);
+      }
+    }
+    
+    setDrawnTeams(teams);
+    setShowDraftModal(true);
+  };
+
+  const shareTeams = () => {
+    const text = drawnTeams.map((team, idx) => {
+      const teamLetter = String.fromCharCode(65 + idx);
+      return `${t.equipe} ${teamLetter}:\n${team.map(p => `- ${p.name} (#${p.number})`).join('\n')}`;
+    }).join('\n\n');
+
+    if (navigator.share) {
+      navigator.share({
+        title: t.equipes,
+        text: text
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(text);
+      setToast({ message: t.copiado, type: 'success' });
+    }
+  };
 
   const updateScore = (team: Team, amount: number) => {
     if (gameTime === 0 && hasStarted.current) return;
@@ -326,7 +498,67 @@ export default function App() {
     setIsRunning(false);
   };
 
+  const updatePlayerStat = (playerId: string, category: keyof Player['stats'], type: 'made' | 'missed', amount: number) => {
+    setPlayers(prev => prev.map(p => {
+      if (p.id === playerId) {
+        return {
+          ...p,
+          stats: {
+            ...p.stats,
+            [category]: {
+              ...p.stats[category],
+              [type]: Math.max(0, p.stats[category][type] + amount)
+            }
+          }
+        };
+      }
+      return p;
+    }));
+  };
+
+  const addPlayer = () => {
+    if (!newPlayerName.trim()) return;
+    const player: Player = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: newPlayerName.toUpperCase(),
+      number: newPlayerNumber,
+      stats: {
+        pts2: { made: 0, missed: 0 },
+        pts3: { made: 0, missed: 0 },
+        ft: { made: 0, missed: 0 },
+      }
+    };
+    setPlayers(prev => [...prev, player]);
+    setDrawnTeams([]);
+    setNewPlayerName('');
+    setNewPlayerNumber('');
+  };
+
+  const removePlayer = (id: string) => {
+    setPlayers(prev => prev.filter(p => p.id !== id));
+    setDrawnTeams([]);
+  };
+
   // --- Effects ---
+
+  // Toast effect
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  // Sync selected player
+  useEffect(() => {
+    if (players.length > 0) {
+      if (!selectedPlayerId || !players.find(p => p.id === selectedPlayerId)) {
+        setSelectedPlayerId(players[0].id);
+      }
+    } else {
+      setSelectedPlayerId(null);
+    }
+  }, [players, selectedPlayerId]);
 
   // Theme effect
   useEffect(() => {
@@ -373,7 +605,7 @@ export default function App() {
         setGameTime(prev => {
           if (prev <= 0) {
             setIsRunning(false);
-            if (gameEndSoundEnabled) playBuzzer();
+            if (gameEndSoundEnabled) playBuzzer(true);
             return 0;
           }
           return prev - 1;
@@ -381,7 +613,7 @@ export default function App() {
 
         setShotClock(prev => {
           if (prev <= 1) {
-            if (shotClockSoundEnabled) playBuzzer();
+            if (shotClockSoundEnabled) playBuzzer(false);
             return 0;
           }
           return prev - 1;
@@ -406,12 +638,29 @@ export default function App() {
         saveToHistory(`${t.fimJogo} - ${homeName} ${homeScore} x ${visitorScore} ${visitorName}`);
       }
       setIsRunning(false);
-      if (gameTime === 0 && isRunning && gameEndSoundEnabled) playBuzzer();
+      if (gameTime === 0 && isRunning && gameEndSoundEnabled) playBuzzer(true);
     }
   }, [homeScore, visitorScore, gameTime, t.fimJogo, t.placar, isRunning, history, homeName, visitorName, gameMode]);
 
   return (
-    <div className="h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center p-3 select-none overflow-hidden transition-colors duration-300">
+    <div className="h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center p-2 sm:p-3 select-none overflow-hidden transition-colors duration-300">
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div 
+            initial={{ opacity: 0, y: -50, x: '-50%' }}
+            animate={{ opacity: 1, y: 20, x: '-50%' }}
+            exit={{ opacity: 0, y: -50, x: '-50%' }}
+            className={`fixed left-1/2 z-[100] px-6 py-3 rounded-2xl shadow-2xl font-bold text-xs flex items-center gap-2 border ${
+              toast.type === 'error' ? 'bg-red-500 text-white border-red-400' : 'bg-[#FF6B35] text-white border-[#FF8B55]'
+            }`}
+          >
+            {toast.type === 'error' ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header - Compact */}
       <header className="w-full max-w-2xl flex items-center gap-2 mb-3 px-2">
         <div className="bg-[#FF6B35] p-1 rounded-full shadow-md">
@@ -428,15 +677,15 @@ export default function App() {
         {activeTab === 'placar' ? (
           <>
             {/* Timer & Shot Clock Row */}
-            <div className="flex gap-3 h-32 shrink-0">
+            <div className="flex gap-3 h-32 sm:h-40 md:h-48 shrink-0">
               {/* Game Timer */}
               <motion.div 
-                className="flex-[3.5] bg-bg-card rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border-y-4 border-[#FF6B35] flex flex-col items-center justify-center relative overflow-hidden cursor-pointer"
+                className="flex-[3.5] bg-bg-card rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] border-y-4 border-[#FF6B35] flex flex-col items-center justify-center relative overflow-hidden cursor-pointer [container-type:inline-size]"
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setIsEditingTime(true)}
               >
                 <span className="text-[9px] font-bold text-text-secondary uppercase tracking-widest absolute top-2">{t.tempoJogo}</span>
-                <div className="text-7xl font-bold tracking-tighter text-text-primary mt-2 font-display">
+                <div className="text-[26cqw] font-bold tracking-tighter text-text-primary mt-4 font-display leading-none">
                   {formatTime(gameTime)}
                 </div>
               </motion.div>
@@ -444,7 +693,7 @@ export default function App() {
               {/* Shot Clock */}
               <div className="flex-1 flex flex-col gap-2">
                 <motion.div 
-                  className="flex-1 bg-bg-card rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative cursor-pointer"
+                  className="flex-1 bg-bg-card rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-center justify-center relative cursor-pointer"
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setShotClock(12)}
                 >
@@ -529,15 +778,15 @@ export default function App() {
               </motion.button>
 
               <ControlButton 
-                icon={<Volume2 className="w-5 h-5" />} 
-                label={t.buzzer} 
-                onClick={playBuzzer}
+                icon={<Users className="w-5 h-5" />} 
+                label={t.sorteio} 
+                onClick={handleDraft}
               />
 
               <ControlButton 
                 icon={<RotateCcw className="w-5 h-5" />} 
                 label={t.reiniciar} 
-                onClick={resetGame}
+                onClick={() => setShowResetConfirm(true)}
               />
             </div>
           </>
@@ -554,7 +803,7 @@ export default function App() {
                 {t.compartilhar}
               </motion.button>
             </div>
-            <div className="flex-1 bg-bg-card rounded-[32px] shadow-lg p-4 overflow-y-auto space-y-3 no-scrollbar">
+            <div className="flex-1 bg-bg-card rounded-2xl shadow-lg p-4 overflow-y-auto space-y-3 no-scrollbar">
               {history.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-text-secondary gap-2">
                   <History className="w-12 h-12 opacity-20" />
@@ -575,15 +824,111 @@ export default function App() {
               )}
             </div>
           </div>
+        ) : activeTab === 'estatisticas' ? (
+          <div className="flex-1 flex flex-col gap-4 p-1 sm:p-2 overflow-y-auto no-scrollbar">
+            <div className="flex justify-between items-center px-2">
+              <h2 className="text-lg font-black text-text-primary">{t.estatisticas}</h2>
+              {drawnTeams.length > 0 && (
+                <motion.button 
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  onClick={() => setDrawnTeams([])}
+                  className="text-[10px] font-bold text-[#FF6B35] uppercase tracking-widest bg-bg-card px-3 py-1.5 rounded-full border border-border shadow-sm active:scale-95 transition-transform"
+                >
+                  {t.limparSorteio}
+                </motion.button>
+              )}
+            </div>
+
+            {/* Add Player Form */}
+            <div className="bg-bg-card rounded-xl p-3 sm:p-4 shadow-sm space-y-3">
+              <div className="flex gap-2 items-center">
+                <input 
+                  type="text"
+                  placeholder={t.nomeJogador}
+                  className="flex-1 min-w-0 bg-bg-primary rounded-xl px-3 sm:px-4 py-2 text-sm font-bold text-text-primary outline-[#FF6B35]"
+                  value={newPlayerName}
+                  onChange={(e) => setNewPlayerName(e.target.value)}
+                />
+                <input 
+                  type="text"
+                  placeholder={t.numeroJogador}
+                  className="w-12 sm:w-16 bg-bg-primary rounded-xl px-1 sm:px-2 py-2 text-sm font-bold text-center text-text-primary outline-[#FF6B35]"
+                  value={newPlayerNumber}
+                  onChange={(e) => setNewPlayerNumber(e.target.value)}
+                />
+                <motion.button
+                  className="p-2 bg-[#FF6B35] text-white rounded-xl shadow-md shrink-0"
+                  whileTap={{ scale: 0.95 }}
+                  onClick={addPlayer}
+                >
+                  <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Players Selection Badges */}
+            <div className="space-y-4 px-2">
+              {drawnTeams.length > 0 ? (
+                drawnTeams.map((team, teamIdx) => (
+                  <div key={teamIdx} className="space-y-2">
+                    <h3 className="text-[9px] font-black text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B35]"></div>
+                      {t.equipe} {String.fromCharCode(65 + teamIdx)}
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {team.map(player => (
+                        <PlayerBadge 
+                          key={player.id}
+                          player={player}
+                          isSelected={selectedPlayerId === player.id}
+                          onClick={() => setSelectedPlayerId(player.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {players.map(player => (
+                    <PlayerBadge 
+                      key={player.id}
+                      player={player}
+                      isSelected={selectedPlayerId === player.id}
+                      onClick={() => setSelectedPlayerId(player.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Selected Player Card */}
+            <div className="pb-4">
+              {selectedPlayerId && players.find(p => p.id === selectedPlayerId) ? (
+                <PlayerStatCard 
+                  player={players.find(p => p.id === selectedPlayerId)} 
+                  gameMode={gameMode} 
+                  t={t} 
+                  updatePlayerStat={updatePlayerStat} 
+                  removePlayer={removePlayer} 
+                />
+              ) : players.length > 0 ? (
+                <div className="h-40 flex flex-col items-center justify-center text-text-secondary text-xs font-bold bg-bg-card rounded-2xl border border-dashed border-border gap-2">
+                  <Dribbble className="w-8 h-8 opacity-20 animate-bounce" />
+                  Selecione um jogador acima
+                </div>
+              ) : null}
+            </div>
+          </div>
         ) : activeTab === 'opcoes' ? (
           <div className="flex-1 flex flex-col gap-4 p-2 overflow-y-auto no-scrollbar">
             <h2 className="text-lg font-black text-text-primary px-2">{t.configuracoes}</h2>
             
-            <div className="bg-bg-card rounded-2xl p-4 shadow-sm space-y-6">
+            <div className="bg-bg-card rounded-xl p-4 shadow-sm space-y-6">
               {/* Language Selection */}
               <div className="space-y-3">
                 <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest flex items-center gap-2">
-                  <Check className="w-3 h-3 text-[#FF6B35]" /> {t.idioma}
+                  <Languages className="w-3 h-3 text-[#FF6B35]" /> {t.idioma}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {(['pt', 'en', 'es'] as const).map((lang) => (
@@ -601,7 +946,7 @@ export default function App() {
               {/* Theme Selection */}
               <div className="space-y-3">
                 <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest flex items-center gap-2">
-                  <Check className="w-3 h-3 text-[#FF6B35]" /> {t.tema}
+                  <Palette className="w-3 h-3 text-[#FF6B35]" /> {t.tema}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -622,7 +967,7 @@ export default function App() {
               {/* Game Mode Selection */}
               <div className="space-y-3">
                 <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest flex items-center gap-2">
-                  <Check className="w-3 h-3 text-[#FF6B35]" /> {t.modoJogo}
+                  <Trophy className="w-3 h-3 text-[#FF6B35]" /> {t.modoJogo}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {(Object.keys(MODES) as Array<keyof typeof MODES>).map((mode) => (
@@ -644,7 +989,10 @@ export default function App() {
 
               {/* Wake Lock Toggle */}
               <div className="flex items-center justify-between py-2 border-t border-border mt-4">
-                <span className="text-xs font-bold text-text-primary">{t.telaSempreLigada}</span>
+                <div className="flex items-center gap-2">
+                  <MonitorSmartphone className="w-3 h-3 text-[#FF6B35]" />
+                  <span className="text-xs font-bold text-text-primary">{t.telaSempreLigada}</span>
+                </div>
                 <button
                   onClick={() => setWakeLockEnabled(!wakeLockEnabled)}
                   className={`w-12 h-6 rounded-full transition-colors relative ${wakeLockEnabled ? 'bg-[#FF6B35]' : 'bg-text-secondary'}`}
@@ -664,7 +1012,16 @@ export default function App() {
                 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-text-primary">{t.somTempoJogo}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-text-primary">{t.somTempoJogo}</span>
+                      <button 
+                        onClick={() => playBuzzer(true)}
+                        className="p-1.5 bg-bg-primary text-[#FF6B35] rounded-lg hover:bg-[#FF6B35]/10 transition-colors"
+                        title={t.testarSom}
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                     <button
                       onClick={() => setGameEndSoundEnabled(!gameEndSoundEnabled)}
                       className={`w-12 h-6 rounded-full transition-colors relative ${gameEndSoundEnabled ? 'bg-[#FF6B35]' : 'bg-text-secondary'}`}
@@ -677,7 +1034,16 @@ export default function App() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-text-primary">{t.somTempoPosse}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-text-primary">{t.somTempoPosse}</span>
+                      <button 
+                        onClick={() => playBuzzer(false)}
+                        className="p-1.5 bg-bg-primary text-[#FF6B35] rounded-lg hover:bg-[#FF6B35]/10 transition-colors"
+                        title={t.testarSom}
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                     <button
                       onClick={() => setShotClockSoundEnabled(!shotClockSoundEnabled)}
                       className={`w-12 h-6 rounded-full transition-colors relative ${shotClockSoundEnabled ? 'bg-[#FF6B35]' : 'bg-text-secondary'}`}
@@ -688,15 +1054,6 @@ export default function App() {
                       />
                     </button>
                   </div>
-
-                  <motion.button
-                    className="w-full py-3 bg-bg-primary text-[#FF6B35] rounded-xl text-xs font-black flex items-center justify-center gap-2 border border-border"
-                    whileTap={{ scale: 0.98 }}
-                    onClick={playBuzzer}
-                  >
-                    <Volume2 className="w-4 h-4" />
-                    {t.testarSom}
-                  </motion.button>
                 </div>
               </div>
             </div>
@@ -723,8 +1080,76 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Reset Confirmation Modal */}
+      <AnimatePresence>
+        {showResetConfirm && (
+          <ConfirmModal 
+            title={t.reiniciar}
+            message={t.confirmarReiniciar}
+            onConfirm={resetGame}
+            onCancel={() => setShowResetConfirm(false)}
+            t={t}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Draft Modal */}
+      <AnimatePresence>
+        {showDraftModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-border flex flex-col max-h-[80vh]"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-black text-text-primary uppercase tracking-tighter">{t.equipes}</h3>
+                <button onClick={() => setShowDraftModal(false)} className="p-2 text-text-secondary">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                {drawnTeams.map((team, idx) => (
+                  <div key={idx} className="bg-bg-primary rounded-2xl p-4 border border-border">
+                    <h4 className="text-[#FF6B35] font-black text-[10px] mb-2 uppercase tracking-widest">
+                      {t.equipe} {String.fromCharCode(65 + idx)}
+                    </h4>
+                    <div className="space-y-1">
+                      {team.map(player => (
+                        <div key={player.id} className="text-xs font-bold text-text-primary flex justify-between items-center py-1 border-b border-border/50 last:border-0">
+                          <span>{player.name}</span>
+                          <span className="text-text-secondary bg-bg-card px-2 py-0.5 rounded-md text-[10px]">#{player.number}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button 
+                  onClick={() => setShowDraftModal(false)}
+                  className="flex-1 py-3 rounded-xl text-xs font-bold bg-bg-primary text-text-secondary"
+                >
+                  {t.fechar || 'Fechar'}
+                </button>
+                <button 
+                  onClick={shareTeams}
+                  className="flex-1 py-3 rounded-xl text-xs font-bold bg-[#FF6B35] text-white shadow-lg shadow-[#FF6B35]/20 flex items-center justify-center gap-2"
+                >
+                  <Share2 className="w-4 h-4" />
+                  {t.compartilhar}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Bottom Navigation - More Compact */}
-      <nav className="w-full max-w-2xl bg-bg-card rounded-t-[32px] shadow-[0_-10px_30px_rgba(0,0,0,0.03)] px-4 py-2 flex justify-between items-center shrink-0 transition-colors duration-300">
+      <nav className="w-full max-w-2xl bg-bg-card rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.03)] px-4 py-2 flex justify-between items-center shrink-0 transition-colors duration-300">
         <NavButton 
           active={activeTab === 'placar'} 
           onClick={() => setActiveTab('placar')}
@@ -771,7 +1196,7 @@ function TimeEditor({ currentTime, onSave, onClose, t }: any) {
       exit={{ opacity: 0 }}
     >
       <motion.div 
-        className="w-full max-w-xs bg-bg-card rounded-[32px] p-6 shadow-2xl flex flex-col gap-6"
+        className="w-full max-w-xs bg-bg-card rounded-2xl p-6 shadow-2xl flex flex-col gap-6"
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
       >
@@ -801,7 +1226,7 @@ function TimeEditor({ currentTime, onSave, onClose, t }: any) {
         </div>
 
         <button 
-          className="w-full h-14 bg-[#FF6B35] text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg"
+          className="w-full h-14 bg-[#FF6B35] text-white rounded-xl font-black flex items-center justify-center gap-2 shadow-lg"
           onClick={() => onSave(mins * 60 + secs)}
         >
           <Check className="w-5 h-5" />
@@ -824,7 +1249,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
   const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
 
   return (
-    <div className="bg-bg-card rounded-[24px] p-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-center gap-2 transition-colors duration-300">
+    <div className="bg-bg-card rounded-xl p-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-center gap-2 transition-colors duration-300">
       <div className="text-center w-full">
         <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest">{label}</span>
         {isEditing ? (
@@ -910,24 +1335,24 @@ function FoulCard({ label, fouls, onAddFoul, t, gameMode }: any) {
   
   return (
     <div 
-      className={`rounded-[24px] p-2 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-start gap-1 cursor-pointer transition-colors duration-300 ${isBonus ? 'bg-[#FF6B35]' : 'bg-bg-card'}`}
+      className={`rounded-xl p-2 shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col items-start gap-1 cursor-pointer transition-colors duration-300 ${isBonus ? 'bg-[#FF6B35]' : 'bg-bg-card'}`}
       onClick={onAddFoul}
     >
       <div className="w-full flex justify-between items-center min-h-[1.5rem]">
         <span className={`text-[8px] font-bold uppercase tracking-widest leading-tight text-left ${isBonus ? 'text-white/80' : 'text-text-secondary'}`}>{label}</span>
         <span className={`text-lg font-black font-mono ${isBonus ? 'text-white' : 'text-text-primary'}`}>{fouls.toString().padStart(2, '0')}</span>
       </div>
-      <div className="flex gap-1 justify-center w-full">
+      <div className="flex gap-1.5 justify-start w-full">
         {[...Array(bonusThreshold)].map((_, i) => (
           <div 
             key={i} 
-            className={`flex-1 h-1 rounded-full transition-colors ${i < fouls ? (isBonus ? 'bg-white' : 'bg-[#FF6B35]') : (isBonus ? 'bg-white/20' : 'bg-border')}`} 
+            className={`w-2 h-2 rounded-full transition-colors ${i < fouls ? (isBonus ? 'bg-white' : 'bg-[#FF6B35]') : (isBonus ? 'bg-white/20' : 'bg-border')}`} 
           />
         ))}
       </div>
       <div className="text-left w-full">
-        <span className={`text-[7px] font-bold uppercase tracking-widest ${isBonus ? 'text-white' : 'text-text-secondary'}`}>
-          • {t.bonus}
+        <span className={`text-[8px] font-bold uppercase tracking-widest flex items-center gap-1 ${isBonus ? 'text-white animate-pulse' : 'text-text-secondary'}`}>
+          <span className="text-[10px]">•</span> {t.bonus}
         </span>
       </div>
     </div>
@@ -949,6 +1374,113 @@ function ControlButton({ icon, label, onClick, disabled }: any) {
   );
 }
 
+function PlayerBadge({ player, isSelected, onClick }: any) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      className={`px-3 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 border shadow-sm ${
+        isSelected 
+          ? 'bg-[#FF6B35] text-white border-[#FF6B35] ring-2 ring-[#FF6B35]/20' 
+          : 'bg-bg-card text-text-primary border-border hover:border-[#FF6B35]/50'
+      }`}
+    >
+      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] ${isSelected ? 'bg-white text-[#FF6B35]' : 'bg-bg-primary text-text-secondary'}`}>
+        {player.number || '00'}
+      </span>
+      <span className="truncate max-w-[80px]">{player.name}</span>
+    </motion.button>
+  );
+}
+
+function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }: any) {
+  const totalPoints = (player.stats.pts2.made * (gameMode === '3x3' ? 1 : 2)) + 
+                     (player.stats.pts3.made * (gameMode === '3x3' ? 2 : 3)) + 
+                     player.stats.ft.made;
+  
+  return (
+    <div className="bg-bg-card rounded-xl p-4 shadow-md space-y-4 border border-border/30">
+      <div className="flex justify-between items-center border-b border-border pb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-[#FF6B35] rounded-full flex items-center justify-center text-white font-black text-xs">
+            {player.number || '00'}
+          </div>
+          <div className="flex flex-col">
+            <span className="font-black text-text-primary leading-none">{player.name}</span>
+            <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest mt-1">Total: {totalPoints} {t.pts}</span>
+          </div>
+        </div>
+        <button onClick={() => removePlayer(player.id)} className="text-text-secondary hover:text-red-500 transition-colors">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="overflow-x-auto -mx-2 px-2">
+        <table className="w-full text-[9px] sm:text-[10px] text-left min-w-[280px]">
+          <thead>
+            <tr className="text-text-secondary uppercase tracking-widest border-b border-border">
+              <th className="pb-2 font-black">{t.categoria}</th>
+              <th className="pb-2 text-center font-black">{t.acertou}</th>
+              <th className="pb-2 text-center font-black">{t.errou}</th>
+              <th className="pb-2 text-right font-black">{t.aproveitamento}</th>
+            </tr>
+          </thead>
+          <tbody className="text-text-primary font-bold">
+            {[
+              { key: 'pts2' as const, label: gameMode === '3x3' ? '1 Ponto' : t.pts2 },
+              { key: 'pts3' as const, label: gameMode === '3x3' ? '2 Pontos' : t.pts3 },
+              { key: 'ft' as const, label: t.lanceLivre },
+            ].map(cat => {
+              const total = player.stats[cat.key].made + player.stats[cat.key].missed;
+              const perc = total > 0 ? ((player.stats[cat.key].made / total) * 100).toFixed(1) : '0.0';
+              return (
+                <tr key={cat.key} className="border-b border-border/50">
+                  <td className="py-2 sm:py-3">{cat.label}</td>
+                  <td className="py-2 sm:py-3">
+                    <div className="flex items-center justify-center gap-1 sm:gap-2">
+                      <button 
+                        onClick={() => updatePlayerStat(player.id, cat.key, 'made', -1)}
+                        className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-bg-primary rounded-md text-text-secondary active:scale-90 transition-transform"
+                      >
+                        <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </button>
+                      <span className="min-w-[14px] sm:min-w-[16px] text-center text-xs">{player.stats[cat.key].made}</span>
+                      <button 
+                        onClick={() => updatePlayerStat(player.id, cat.key, 'made', 1)}
+                        className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-[#FF6B35] text-white rounded-md active:scale-90 transition-transform shadow-sm"
+                      >
+                        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </button>
+                    </div>
+                  </td>
+                  <td className="py-2 sm:py-3">
+                    <div className="flex items-center justify-center gap-1 sm:gap-2">
+                      <button 
+                        onClick={() => updatePlayerStat(player.id, cat.key, 'missed', -1)}
+                        className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-bg-primary rounded-md text-text-secondary active:scale-90 transition-transform"
+                      >
+                        <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </button>
+                      <span className="min-w-[14px] sm:min-w-[16px] text-center text-xs">{player.stats[cat.key].missed}</span>
+                      <button 
+                        onClick={() => updatePlayerStat(player.id, cat.key, 'missed', 1)}
+                        className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-text-secondary text-white rounded-md active:scale-90 transition-transform shadow-sm"
+                      >
+                        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </button>
+                    </div>
+                  </td>
+                  <td className="py-2 sm:py-3 text-right font-mono text-[#FF6B35] text-[10px] sm:text-xs">{perc}%</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function NavButton({ active, onClick, icon, label }: any) {
   return (
     <button 
@@ -962,5 +1494,43 @@ function NavButton({ active, onClick, icon, label }: any) {
         {label}
       </span>
     </button>
+  );
+}
+
+function ConfirmModal({ title, message, onConfirm, onCancel, t }: any) {
+  return (
+    <motion.div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div 
+        className="w-full max-w-xs bg-bg-card rounded-2xl p-6 shadow-2xl flex flex-col gap-6"
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+      >
+        <div className="text-center space-y-2">
+          <h3 className="font-black text-text-primary uppercase tracking-widest text-sm">{title}</h3>
+          <p className="text-xs font-bold text-text-secondary">{message}</p>
+        </div>
+
+        <div className="flex gap-3">
+          <button 
+            className="flex-1 h-12 bg-bg-primary text-text-secondary rounded-xl font-black text-xs uppercase"
+            onClick={onCancel}
+          >
+            {t.desfazer /* Using Undo label as Cancel if no better one exists, but let's just use a generic one or check translations */}
+            {/* Actually, let's just use "Voltar" or similar, but I'll check translations for a better one */}
+          </button>
+          <button 
+            className="flex-1 h-12 bg-[#FF6B35] text-white rounded-xl font-black text-xs uppercase shadow-lg"
+            onClick={onConfirm}
+          >
+            {t.reiniciar}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }

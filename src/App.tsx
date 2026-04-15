@@ -286,8 +286,8 @@ export default function App() {
   const [newPlayerNumber, setNewPlayerNumber] = useState('');
   const hasStarted = useRef(false);
   const buzzerPlayedRef = useRef(false);
-  const shotClockBuzzerPlayedRef = useRef(false);
-  const shotClockAudioRef = useRef<AudioContext | null>(null);
+  const [shotClockBuzzerPlayed, setShotClockBuzzerPlayed] = useState(false);
+  const shotClockIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const wakeLockRef = useRef<any>(null);
 
   const t = TRANSLATIONS[language];
@@ -379,17 +379,13 @@ export default function App() {
   };
 
   const stopShotClockBuzzer = () => {
-    if (shotClockAudioRef.current) {
-      try {
-        shotClockAudioRef.current.close();
-      } catch (e) {
-        console.error('Error closing audio context:', e);
-      }
-      shotClockAudioRef.current = null;
+    if (shotClockIntervalRef.current) {
+      clearInterval(shotClockIntervalRef.current);
+      shotClockIntervalRef.current = null;
     }
   };
 
-  const playBuzzer = async (isGameEnd = false, loop = false) => {
+  const playBuzzer = async (isGameEnd = false) => {
     console.log('BUZZER!', isGameEnd ? 'Game End' : 'Shot Clock');
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     
@@ -425,28 +421,25 @@ export default function App() {
         osc.stop(ctx.currentTime + duration);
       });
     } else {
-      // Shot clock buzzer
-      const duration = 0.4;
+      // Shot clock buzzer - short beep
+      const duration = 0.2;
       filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(800, ctx.currentTime);
-      filter.Q.setValueAtTime(1, ctx.currentTime);
+      filter.frequency.setValueAtTime(1000, ctx.currentTime);
+      filter.Q.setValueAtTime(2, ctx.currentTime);
 
       masterGain.gain.setValueAtTime(0, ctx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 0.01);
-      
-      if (!loop) {
-        masterGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-      }
+      masterGain.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.01);
+      masterGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
       
       masterGain.connect(filter);
       filter.connect(ctx.destination);
 
       const osc = ctx.createOscillator();
       osc.type = 'square';
-      osc.frequency.setValueAtTime(660, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
       
       const osc2 = ctx.createOscillator();
-      osc2.type = 'triangle';
+      osc2.type = 'square';
       osc2.frequency.setValueAtTime(440, ctx.currentTime);
 
       osc.connect(masterGain);
@@ -454,13 +447,8 @@ export default function App() {
       
       osc.start();
       osc2.start();
-      
-      if (!loop) {
-        osc.stop(ctx.currentTime + duration);
-        osc2.stop(ctx.currentTime + duration);
-      } else {
-        shotClockAudioRef.current = ctx;
-      }
+      osc.stop(ctx.currentTime + duration);
+      osc2.stop(ctx.currentTime + duration);
     }
   };
 
@@ -680,15 +668,20 @@ export default function App() {
 
   // Shot Clock Buzzer Logic
   useEffect(() => {
-    if (shotClock === 0 && isRunning && !shotClockBuzzerPlayedRef.current) {
-      if (shotClockSoundEnabled) playBuzzer(false, true);
-      shotClockBuzzerPlayedRef.current = true;
+    if (shotClock === 0 && isRunning && !shotClockBuzzerPlayed) {
+      if (shotClockSoundEnabled) {
+        playBuzzer(false);
+        shotClockIntervalRef.current = setInterval(() => {
+          playBuzzer(false);
+        }, 500);
+      }
+      setShotClockBuzzerPlayed(true);
     }
     if (shotClock > 0) {
       stopShotClockBuzzer();
-      shotClockBuzzerPlayedRef.current = false;
+      setShotClockBuzzerPlayed(false);
     }
-  }, [shotClock, isRunning, shotClockSoundEnabled]);
+  }, [shotClock, isRunning, shotClockSoundEnabled, shotClockBuzzerPlayed]);
 
   return (
     <div className="h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center p-2 sm:p-3 select-none overflow-hidden transition-colors duration-300">
@@ -1297,7 +1290,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
   const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
 
   return (
-    <div className="bg-bg-card rounded-xl p-3 shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-center gap-2 transition-colors duration-300 min-h-[180px] md:min-h-[220px] md:justify-between">
+    <div className="bg-bg-card rounded-xl p-3 shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-center justify-between transition-colors duration-300 min-h-[240px] md:min-h-[300px]">
       <div className="text-center w-full">
         <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest">{label}</span>
         {isEditing ? (

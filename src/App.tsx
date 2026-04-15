@@ -287,6 +287,7 @@ export default function App() {
   const hasStarted = useRef(false);
   const buzzerPlayedRef = useRef(false);
   const shotClockBuzzerPlayedRef = useRef(false);
+  const shotClockAudioRef = useRef<AudioContext | null>(null);
   const wakeLockRef = useRef<any>(null);
 
   const t = TRANSLATIONS[language];
@@ -352,6 +353,7 @@ export default function App() {
   };
 
   const resetGame = () => {
+    stopShotClockBuzzer();
     const mode = MODES[gameMode];
     setGameTime(mode.gameTime);
     setShotClock(mode.shotClock);
@@ -376,7 +378,18 @@ export default function App() {
     setShowResetConfirm(false);
   };
 
-  const playBuzzer = async (isGameEnd = false) => {
+  const stopShotClockBuzzer = () => {
+    if (shotClockAudioRef.current) {
+      try {
+        shotClockAudioRef.current.close();
+      } catch (e) {
+        console.error('Error closing audio context:', e);
+      }
+      shotClockAudioRef.current = null;
+    }
+  };
+
+  const playBuzzer = async (isGameEnd = false, loop = false) => {
     console.log('BUZZER!', isGameEnd ? 'Game End' : 'Shot Clock');
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     
@@ -412,7 +425,7 @@ export default function App() {
         osc.stop(ctx.currentTime + duration);
       });
     } else {
-      // Short bell-like buzzer for shot clock
+      // Shot clock buzzer
       const duration = 0.4;
       filter.type = 'bandpass';
       filter.frequency.setValueAtTime(800, ctx.currentTime);
@@ -420,7 +433,10 @@ export default function App() {
 
       masterGain.gain.setValueAtTime(0, ctx.currentTime);
       masterGain.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 0.01);
-      masterGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+      
+      if (!loop) {
+        masterGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+      }
       
       masterGain.connect(filter);
       filter.connect(ctx.destination);
@@ -438,8 +454,13 @@ export default function App() {
       
       osc.start();
       osc2.start();
-      osc.stop(ctx.currentTime + duration);
-      osc2.stop(ctx.currentTime + duration);
+      
+      if (!loop) {
+        osc.stop(ctx.currentTime + duration);
+        osc2.stop(ctx.currentTime + duration);
+      } else {
+        shotClockAudioRef.current = ctx;
+      }
     }
   };
 
@@ -660,10 +681,11 @@ export default function App() {
   // Shot Clock Buzzer Logic
   useEffect(() => {
     if (shotClock === 0 && isRunning && !shotClockBuzzerPlayedRef.current) {
-      if (shotClockSoundEnabled) playBuzzer(false);
+      if (shotClockSoundEnabled) playBuzzer(false, true);
       shotClockBuzzerPlayedRef.current = true;
     }
     if (shotClock > 0) {
+      stopShotClockBuzzer();
       shotClockBuzzerPlayedRef.current = false;
     }
   }, [shotClock, isRunning, shotClockSoundEnabled]);
@@ -816,40 +838,6 @@ export default function App() {
               />
             </div>
           </>
-        ) : activeTab === 'historico' ? (
-          <div className="flex-1 flex flex-col gap-3 min-h-0 mb-2">
-            <div className="flex justify-between items-center px-2">
-              <h2 className="text-lg font-black text-text-primary">{t.historicoPartida}</h2>
-              <motion.button
-                className="p-2 bg-[#FF6B35] text-white rounded-xl shadow-md flex items-center gap-2 text-[10px] font-bold"
-                whileTap={{ scale: 0.95 }}
-                onClick={shareHistory}
-              >
-                <Share2 className="w-4 h-4" />
-                {t.compartilhar}
-              </motion.button>
-            </div>
-            <div className="flex-1 bg-bg-card rounded-2xl shadow-lg p-4 overflow-y-auto space-y-3 no-scrollbar">
-              {history.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-text-secondary gap-2">
-                  <History className="w-12 h-12 opacity-20" />
-                  <p className="text-sm font-bold">{t.nenhumaAcao}</p>
-                </div>
-              ) : (
-                history.map((action) => (
-                  <div key={action.id} className="flex items-start gap-3 border-b border-border pb-2">
-                    <div className="text-[10px] font-mono text-text-secondary pt-1">
-                      {new Date(action.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-text-primary">{action.description}</p>
-                      <p className="text-[10px] text-text-secondary">{t.placar}: {action.state.homeScore} x {action.state.visitorScore}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
         ) : activeTab === 'estatisticas' ? (
           <div className="flex-1 flex flex-col gap-4 p-1 sm:p-2 overflow-y-auto no-scrollbar">
             <div className="flex justify-between items-center px-2">
@@ -944,6 +932,40 @@ export default function App() {
                   Selecione um jogador acima
                 </div>
               ) : null}
+            </div>
+          </div>
+        ) : activeTab === 'historico' ? (
+          <div className="flex-1 flex flex-col gap-3 min-h-0 mb-2">
+            <div className="flex justify-between items-center px-2">
+              <h2 className="text-lg font-black text-text-primary">{t.historicoPartida}</h2>
+              <motion.button
+                className="p-2 bg-[#FF6B35] text-white rounded-xl shadow-md flex items-center gap-2 text-[10px] font-bold"
+                whileTap={{ scale: 0.95 }}
+                onClick={shareHistory}
+              >
+                <Share2 className="w-4 h-4" />
+                {t.compartilhar}
+              </motion.button>
+            </div>
+            <div className="flex-1 bg-bg-card rounded-2xl shadow-lg p-4 overflow-y-auto space-y-3 no-scrollbar">
+              {history.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-text-secondary gap-2">
+                  <History className="w-12 h-12 opacity-20" />
+                  <p className="text-sm font-bold">{t.nenhumaAcao}</p>
+                </div>
+              ) : (
+                history.map((action) => (
+                  <div key={action.id} className="flex items-start gap-3 border-b border-border pb-2">
+                    <div className="text-[10px] font-mono text-text-secondary pt-1">
+                      {new Date(action.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-text-primary">{action.description}</p>
+                      <p className="text-[10px] text-text-secondary">{t.placar}: {action.state.homeScore} x {action.state.visitorScore}</p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         ) : activeTab === 'opcoes' ? (
@@ -1183,16 +1205,16 @@ export default function App() {
           label={t.placar}
         />
         <NavButton 
-          active={activeTab === 'historico'} 
-          onClick={() => setActiveTab('historico')}
-          icon={<History className="w-5 h-5" />}
-          label={t.historico}
-        />
-        <NavButton 
           active={activeTab === 'estatisticas'} 
           onClick={() => setActiveTab('estatisticas')}
           icon={<BarChart3 className="w-5 h-5" />}
           label={t.estatisticas}
+        />
+        <NavButton 
+          active={activeTab === 'historico'} 
+          onClick={() => setActiveTab('historico')}
+          icon={<History className="w-5 h-5" />}
+          label={t.historico}
         />
         <NavButton 
           active={activeTab === 'opcoes'} 
@@ -1275,7 +1297,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
   const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
 
   return (
-    <div className="bg-bg-card rounded-xl p-3 shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-center gap-2 transition-colors duration-300 md:min-h-[220px] md:justify-between">
+    <div className="bg-bg-card rounded-xl p-3 shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-center gap-2 transition-colors duration-300 min-h-[180px] md:min-h-[220px] md:justify-between">
       <div className="text-center w-full">
         <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest">{label}</span>
         {isEditing ? (

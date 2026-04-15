@@ -288,6 +288,7 @@ export default function App() {
   const buzzerPlayedRef = useRef(false);
   const [shotClockBuzzerPlayed, setShotClockBuzzerPlayed] = useState(false);
   const shotClockIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
   const wakeLockRef = useRef<any>(null);
 
   const t = TRANSLATIONS[language];
@@ -387,7 +388,12 @@ export default function App() {
 
   const playBuzzer = async (isGameEnd = false) => {
     console.log('BUZZER!', isGameEnd ? 'Game End' : 'Shot Clock');
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    const ctx = audioCtxRef.current;
     
     if (ctx.state === 'suspended') {
       await ctx.resume();
@@ -409,7 +415,6 @@ export default function App() {
       masterGain.connect(filter);
       filter.connect(ctx.destination);
 
-      // Higher base frequency for a more "piercing" buzzer
       const baseFreq = 220; 
       [1, 1.2, 1.5, 2, 2.5, 3, 4].forEach(harmonic => {
         const osc = ctx.createOscillator();
@@ -421,7 +426,6 @@ export default function App() {
         osc.stop(ctx.currentTime + duration);
       });
     } else {
-      // Shot clock buzzer - short beep
       const duration = 0.2;
       filter.type = 'bandpass';
       filter.frequency.setValueAtTime(1000, ctx.currentTime);
@@ -684,7 +688,7 @@ export default function App() {
   }, [shotClock, isRunning, shotClockSoundEnabled, shotClockBuzzerPlayed]);
 
   return (
-    <div className="h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center p-2 sm:p-3 select-none overflow-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center px-4 py-2 sm:px-6 sm:py-3 select-none transition-colors duration-300">
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
@@ -1290,7 +1294,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
   const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
 
   return (
-    <div className="bg-bg-card rounded-xl p-3 shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-center justify-between transition-colors duration-300 min-h-[240px] md:min-h-[300px]">
+    <div className="bg-bg-card rounded-xl p-3 shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-center justify-between transition-colors duration-300 min-h-[220px] sm:min-h-[240px] md:min-h-[280px]">
       <div className="text-center w-full">
         <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest">{label}</span>
         {isEditing ? (

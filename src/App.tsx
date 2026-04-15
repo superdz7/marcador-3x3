@@ -672,7 +672,7 @@ export default function App() {
   }, [shotClock, isRunning, shotClockSoundEnabled, shotClockBuzzerPlayed]);
 
   return (
-    <div className="min-h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center px-4 py-2 sm:px-6 sm:py-3 select-none transition-colors duration-300">
+    <div className="min-h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center px-4 py-2 sm:px-6 sm:py-3 pb-24 select-none transition-colors duration-300">
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
@@ -702,11 +702,11 @@ export default function App() {
       </header>
 
       {/* Main Scoreboard Area */}
-      <main className="w-full max-w-2xl flex-1 flex flex-col gap-3 min-h-0">
+      <main className="w-full max-w-2xl flex flex-col gap-3">
         {activeTab === 'placar' ? (
           <>
             {/* Timer & Shot Clock Row */}
-            <div className="flex gap-3 h-32 sm:h-40 md:h-48 shrink-0">
+            <div className="flex gap-3 h-28 sm:h-36 md:h-44 shrink-0">
               {/* Game Timer */}
               <motion.div 
                 className={`flex-[3.5] bg-bg-card rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] border-y-4 border-[#FF6B35] flex flex-col items-center justify-center relative overflow-hidden [container-type:inline-size] ${hasStarted.current ? 'cursor-default' : 'cursor-pointer'}`}
@@ -795,7 +795,7 @@ export default function App() {
             </div>
 
             {/* Controls Row */}
-            <div className="grid grid-cols-4 gap-3 mt-auto mb-2 shrink-0">
+            <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-2 shrink-0">
               <ControlButton 
                 icon={<Undo2 className="w-5 h-5" />} 
                 label={t.desfazer} 
@@ -1093,6 +1093,12 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            <div className="pt-4 text-right px-2">
+              <span className="text-[9px] font-bold text-text-secondary uppercase tracking-widest opacity-50">
+                desenvolvido por superdz7
+              </span>
+            </div>
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-text-secondary">
@@ -1184,8 +1190,8 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Bottom Navigation - More Compact */}
-      <nav className="w-full max-w-2xl bg-bg-card rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] px-4 py-2 flex justify-between items-center shrink-0 transition-colors duration-300">
+      {/* Bottom Navigation - Fixed at bottom */}
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl bg-bg-card rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] px-4 py-2 flex justify-between items-center z-50 transition-colors duration-300">
         <NavButton 
           active={activeTab === 'placar'} 
           onClick={() => setActiveTab('placar')}
@@ -1285,7 +1291,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
   const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
 
   return (
-    <div className="bg-bg-card rounded-xl p-3 shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-center justify-between transition-colors duration-300 min-h-[220px] sm:min-h-[240px] md:min-h-[280px]">
+    <div className="bg-bg-card rounded-xl p-3 shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-center justify-between transition-colors duration-300 min-h-[180px] sm:min-h-[220px] md:min-h-[260px]">
       <div className="text-center w-full">
         <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest">{label}</span>
         {isEditing ? (
@@ -1385,11 +1391,6 @@ function FoulCard({ label, fouls, onAddFoul, t, gameMode }: any) {
             className={`w-2 h-2 rounded-full transition-colors ${i < fouls ? (isBonus ? 'bg-white' : 'bg-[#FF6B35]') : (isBonus ? 'bg-white/20' : 'bg-border')}`} 
           />
         ))}
-      </div>
-      <div className="text-left w-full">
-        <span className={`text-[8px] font-bold uppercase tracking-widest flex items-center gap-1 ${isBonus ? 'text-white animate-pulse' : 'text-text-secondary'}`}>
-          <span className="text-[10px]">•</span> {t.bonus}
-        </span>
       </div>
     </div>
   );
@@ -1520,7 +1521,7 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
 function NavButton({ active, onClick, icon, label }: any) {
   return (
     <button 
-      className="flex flex-col items-center gap-0.5 group"
+      className="flex-1 flex flex-col items-center gap-0.5 group"
       onClick={onClick}
     >
       <div className={`p-1.5 rounded-xl transition-all ${active ? 'bg-[#FFF0EB] dark:bg-[#FF6B35]/20 text-[#FF6B35]' : 'text-text-secondary group-hover:text-[#FF6B35]'}`}>

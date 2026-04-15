@@ -287,7 +287,6 @@ export default function App() {
   const hasStarted = useRef(false);
   const buzzerPlayedRef = useRef(false);
   const [shotClockBuzzerPlayed, setShotClockBuzzerPlayed] = useState(false);
-  const shotClockIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const wakeLockRef = useRef<any>(null);
 
@@ -354,7 +353,6 @@ export default function App() {
   };
 
   const resetGame = () => {
-    stopShotClockBuzzer();
     const mode = MODES[gameMode];
     setGameTime(mode.gameTime);
     setShotClock(mode.shotClock);
@@ -377,13 +375,6 @@ export default function App() {
     })));
     hasStarted.current = false;
     setShowResetConfirm(false);
-  };
-
-  const stopShotClockBuzzer = () => {
-    if (shotClockIntervalRef.current) {
-      clearInterval(shotClockIntervalRef.current);
-      shotClockIntervalRef.current = null;
-    }
   };
 
   const playBuzzer = async (isGameEnd = false) => {
@@ -426,33 +417,27 @@ export default function App() {
         osc.stop(ctx.currentTime + duration);
       });
     } else {
-      const duration = 0.2;
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(1000, ctx.currentTime);
-      filter.Q.setValueAtTime(2, ctx.currentTime);
+      // Shot clock buzzer - HD & Louder
+      const duration = 0.8;
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(3000, ctx.currentTime);
 
       masterGain.gain.setValueAtTime(0, ctx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.01);
+      masterGain.gain.linearRampToValueAtTime(1.0, ctx.currentTime + 0.02);
       masterGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
       
       masterGain.connect(filter);
       filter.connect(ctx.destination);
 
-      const osc = ctx.createOscillator();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      
-      const osc2 = ctx.createOscillator();
-      osc2.type = 'square';
-      osc2.frequency.setValueAtTime(440, ctx.currentTime);
-
-      osc.connect(masterGain);
-      osc2.connect(masterGain);
-      
-      osc.start();
-      osc2.start();
-      osc.stop(ctx.currentTime + duration);
-      osc2.stop(ctx.currentTime + duration);
+      // Richer sound with multiple frequencies
+      [660, 880, 1320].forEach(freq => {
+        const osc = ctx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        osc.connect(masterGain);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      });
     }
   };
 
@@ -675,14 +660,10 @@ export default function App() {
     if (shotClock === 0 && isRunning && !shotClockBuzzerPlayed) {
       if (shotClockSoundEnabled) {
         playBuzzer(false);
-        shotClockIntervalRef.current = setInterval(() => {
-          playBuzzer(false);
-        }, 500);
       }
       setShotClockBuzzerPlayed(true);
     }
     if (shotClock > 0) {
-      stopShotClockBuzzer();
       setShotClockBuzzerPlayed(false);
     }
   }, [shotClock, isRunning, shotClockSoundEnabled, shotClockBuzzerPlayed]);

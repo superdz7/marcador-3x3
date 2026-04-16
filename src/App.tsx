@@ -21,6 +21,9 @@ import {
   Plus,
   Minus,
   Check,
+  MessageCircle,
+  Copy,
+  Send,
   Languages,
   Palette,
   MonitorSmartphone,
@@ -106,6 +109,10 @@ const TRANSLATIONS: any = {
     faltaCasa: 'Falta da equipe da Casa',
     faltaVisitante: 'Falta da equipe Visitante',
     copiado: 'Histórico copiado para a área de transferência!',
+    compartilharVia: 'Compartilhar via:',
+    whatsapp: 'WhatsApp',
+    telegram: 'Telegram',
+    copiar: 'Copiar Texto',
     sons: 'Sons',
     somTempoJogo: 'Som de fim de jogo',
     somTempoPosse: 'Som de fim de posse',
@@ -167,6 +174,10 @@ const TRANSLATIONS: any = {
     faltaCasa: 'Home Team Foul',
     faltaVisitante: 'Away Team Foul',
     copiado: 'History copied to clipboard!',
+    compartilharVia: 'Share via:',
+    whatsapp: 'WhatsApp',
+    telegram: 'Telegram',
+    copiar: 'Copy Text',
     sons: 'Sounds',
     somTempoJogo: 'Game end sound',
     somTempoPosse: 'Shot clock sound',
@@ -226,6 +237,10 @@ const TRANSLATIONS: any = {
     faltaCasa: 'Falta del equipo Local',
     faltaVisitante: 'Falta del equipo Visitante',
     copiado: '¡Historial copiado al portapapeles!',
+    compartilharVia: 'Compartir vía:',
+    whatsapp: 'WhatsApp',
+    telegram: 'Telegram',
+    copiar: 'Copiar Texto',
     sons: 'Sonidos',
     somTempoJogo: 'Sonido de fin de juego',
     somTempoPosse: 'Sonido de fin de posesión',
@@ -286,6 +301,7 @@ export default function App() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [players, setPlayers] = useState<Player[]>([]);
   const [showDraftModal, setShowDraftModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState<{ text: string; title: string } | null>(null);
   const [drawnTeams, setDrawnTeams] = useState<Player[][]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
@@ -329,14 +345,14 @@ export default function App() {
     const finalScore = `${t.placar} FINAL: ${t.casa} ${homeScore} x ${visitorScore} ${t.visitante}`;
     const fullText = `${t.historicoPartida} ${MODES[gameMode].label}\n\n${text}\n\n${finalScore}`;
     
+    handleShare(fullText, `${t.historicoPartida} ${MODES[gameMode].label}`);
+  };
+
+  const handleShare = (text: string, title: string) => {
     if (navigator.share) {
-      navigator.share({
-        title: `${t.historicoPartida} ${MODES[gameMode].label}`,
-        text: fullText,
-      }).catch(console.error);
+      navigator.share({ title, text }).catch(() => setShowShareModal({ text, title }));
     } else {
-      navigator.clipboard.writeText(fullText);
-      alert(t.copiado);
+      setShowShareModal({ text, title });
     }
   };
 
@@ -475,15 +491,7 @@ export default function App() {
       return `${t.equipe} ${teamLetter}:\n${team.map(p => `- ${p.name} (#${p.number})`).join('\n')}`;
     }).join('\n\n');
 
-    if (navigator.share) {
-      navigator.share({
-        title: t.equipes,
-        text: text
-      }).catch(console.error);
-    } else {
-      navigator.clipboard.writeText(text);
-      setToast({ message: t.copiado, type: 'success' });
-    }
+    handleShare(text, t.equipes);
   };
 
   const updateScore = (team: Team, amount: number) => {
@@ -584,27 +592,46 @@ export default function App() {
 
   // Wake Lock effect
   useEffect(() => {
+    let wakeLock: any = null;
+
     const requestWakeLock = async () => {
       if ('wakeLock' in navigator && wakeLockEnabled) {
         try {
-          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
-        } catch (err) {
-          console.error(`${err.name}, ${err.message}`);
+          wakeLock = await (navigator as any).wakeLock.request('screen');
+          console.log('Wake Lock active');
+          setToast({ message: language === 'pt' ? 'Tela sempre ligada ativa' : (language === 'es' ? 'Pantalla siempre encendida activa' : 'Stay awake active'), type: 'success' });
+        } catch (err: any) {
+          console.error(`Wake Lock error: ${err.message}`);
+          setWakeLockEnabled(false);
+          setToast({ message: language === 'pt' ? 'Erro ao manter tela ligada' : 'Error keeping screen on', type: 'error' });
         }
-      } else if (wakeLockRef.current) {
-        wakeLockRef.current.release();
-        wakeLockRef.current = null;
       }
     };
 
-    requestWakeLock();
+    const handleVisibilityChange = async () => {
+      if (wakeLockEnabled && document.visibilityState === 'visible') {
+        await requestWakeLock();
+      }
+    };
+
+    if (wakeLockEnabled) {
+      if (!('wakeLock' in navigator)) {
+        setToast({ message: language === 'pt' ? 'Navegador não suporta esta função' : 'Wake lock not supported', type: 'error' });
+        setWakeLockEnabled(false);
+      } else {
+        requestWakeLock();
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+      }
+    }
 
     return () => {
-      if (wakeLockRef.current) {
-        wakeLockRef.current.release();
+      if (wakeLock) {
+        wakeLock.release();
+        wakeLock = null;
       }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [wakeLockEnabled]);
+  }, [wakeLockEnabled, language]);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -693,9 +720,9 @@ export default function App() {
       </AnimatePresence>
 
       {/* Header - Glassmorphism */}
-      <header className="w-full sticky top-0 z-40 glass px-6 py-4 flex items-center justify-between">
+      <header className="w-full sticky top-0 z-40 glass px-6 py-2 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center shadow-lg overflow-hidden border border-accent/20">
+          <div className="w-8 h-8 bg-accent/20 rounded-xl flex items-center justify-center shadow-lg overflow-hidden border border-accent/20">
             <img 
               src="https://img.icons8.com/color/96/basketball.png" 
               alt="Basketball"
@@ -725,7 +752,7 @@ export default function App() {
         {activeTab === 'placar' ? (
           <>
             {/* Timer & Shot Clock Row */}
-            <div className="flex gap-4 h-32 sm:h-40 md:h-48 shrink-0">
+            <div className="flex gap-4 h-28 sm:h-36 md:h-44 shrink-0">
               {/* Game Timer */}
               <motion.div 
                 className={`flex-[3] glass-card rounded-3xl flex flex-col items-center justify-center relative overflow-hidden group ${hasStarted.current ? 'cursor-default' : 'cursor-pointer'}`}
@@ -740,26 +767,26 @@ export default function App() {
               >
                 <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest absolute top-4">{t.tempoJogo}</span>
-                <div className="text-[22cqw] font-bold tracking-tighter text-text-primary mt-2 font-display leading-none text-digit">
+                <div className="text-[16cqw] sm:text-[18cqw] md:text-[5rem] font-bold tracking-tighter text-text-primary mt-2 font-display leading-none text-digit">
                   {formatTime(gameTime)}
                 </div>
               </motion.div>
 
               {/* Shot Clock */}
-              <div className="flex-1 flex flex-col gap-3">
+              <div className="flex-1 flex flex-col gap-2">
                 <motion.div 
-                  className="flex-1 glass-card rounded-3xl flex flex-col items-center justify-center relative cursor-pointer active:scale-95 transition-transform"
+                  className="flex-1 glass-card rounded-2xl flex flex-col items-center justify-center relative cursor-pointer active:scale-95 transition-transform"
                   onClick={() => setShotClock(12)}
                 >
-                  <span className="text-[9px] font-bold text-accent uppercase tracking-widest absolute top-3 leading-none">{t.posse}</span>
-                  <div className={`text-4xl font-black text-accent mt-2 font-mono text-digit ${shotClock <= 3 && shotClock > 0 ? 'animate-pulse' : ''}`}>
+                  <span className="text-[8px] font-bold text-accent uppercase tracking-widest absolute top-2.5 leading-none">{t.posse}</span>
+                  <div className={`text-3xl font-black text-accent mt-2 font-mono text-digit ${shotClock <= 3 && shotClock > 0 ? 'animate-pulse' : ''}`}>
                     {shotClock.toString().padStart(2, '0')}
                   </div>
                 </motion.div>
                 
                 {(gameMode === 'fiba' || gameMode === 'nba') && (
                   <motion.button
-                    className="h-12 glass-card rounded-2xl text-accent font-black text-xs flex items-center justify-center active:scale-95 transition-transform"
+                    className="h-8 glass-card rounded-xl text-accent font-black text-[10px] flex items-center justify-center active:scale-95 transition-transform"
                     onClick={() => setShotClock(24)}
                   >
                     24s
@@ -822,11 +849,11 @@ export default function App() {
               />
               
               <motion.button
-                className={`h-16 rounded-3xl flex items-center justify-center shadow-2xl transition-all duration-300 ${isRunning ? 'bg-text-primary text-bg-primary scale-[1.02]' : 'bg-accent text-white shadow-accent/30'}`}
+                className={`h-12 rounded-xl flex items-center justify-center shadow-2xl transition-all duration-300 ${isRunning ? 'bg-text-primary text-bg-primary scale-[1.02]' : 'bg-accent text-white shadow-accent/30'}`}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsRunning(!isRunning)}
               >
-                {isRunning ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
+                {isRunning ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
               </motion.button>
 
               <ControlButton 
@@ -1240,8 +1267,21 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Share Modal */}
+      <AnimatePresence>
+        {showShareModal && (
+          <ShareModal 
+            title={showShareModal.title}
+            text={showShareModal.text}
+            onClose={() => setShowShareModal(null)}
+            t={t}
+            setToast={setToast}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Bottom Navigation - Fixed at bottom */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl bg-bg-card rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] px-4 py-2 flex justify-between items-center z-50 transition-colors duration-300">
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl bg-bg-card rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] px-4 py-1 flex justify-between items-center z-50 transition-colors duration-300">
         <NavButton 
           active={activeTab === 'placar'} 
           onClick={() => setActiveTab('placar')}
@@ -1454,11 +1494,11 @@ function FoulCard({ label, fouls, onAddFoul, t, gameMode }: any) {
 function ControlButton({ icon, label, onClick, disabled }: any) {
   return (
     <motion.button
-      className={`flex flex-col items-center justify-center gap-2 h-20 rounded-[2rem] glass-card border border-white/10 transition-all duration-300 ${disabled ? 'opacity-30 grayscale cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95 shadow-lg shadow-black/5'}`}
+      className={`flex flex-col items-center justify-center gap-1 h-12 rounded-xl glass-card border border-white/10 transition-all duration-300 ${disabled ? 'opacity-30 grayscale cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95 shadow-lg shadow-black/5'}`}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
     >
-      <div className="text-accent">{React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6' })}</div>
+      <div className="text-accent">{React.cloneElement(icon as React.ReactElement, { className: 'w-4 h-4' })}</div>
       <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{label}</span>
     </motion.button>
   );
@@ -1575,11 +1615,11 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
 function NavButton({ active, onClick, icon, label }: any) {
   return (
     <button 
-      className="flex-1 flex flex-col items-center gap-1 group py-3 relative"
+      className="flex-1 flex flex-col items-center gap-0.5 group py-1.5 relative"
       onClick={onClick}
     >
-      <div className={`p-2 rounded-2xl transition-all duration-300 relative z-10 ${active ? 'text-accent scale-110' : 'text-text-secondary group-hover:text-accent/70'}`}>
-        {React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6' })}
+      <div className={`p-1.5 rounded-2xl transition-all duration-300 relative z-10 ${active ? 'text-accent scale-110' : 'text-text-secondary group-hover:text-accent/70'}`}>
+        {React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}
       </div>
       <span className={`text-[10px] font-bold tracking-tight z-10 ${active ? 'text-text-primary' : 'text-text-secondary'}`}>
         {label}
@@ -1593,6 +1633,77 @@ function NavButton({ active, onClick, icon, label }: any) {
         />
       )}
     </button>
+  );
+}
+
+function ShareModal({ title, text, onClose, t, setToast }: any) {
+  const encodedText = encodeURIComponent(text);
+  const whatsappUrl = `https://wa.me/?text=${encodedText}`;
+  const telegramUrl = `https://t.me/share/url?url=&text=${encodedText}`;
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(text);
+    setToast({ message: t.copiado, type: 'success' });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/40 backdrop-blur-sm">
+      <motion.div 
+        className="w-full sm:max-w-xs glass-card rounded-t-3xl sm:rounded-[2.5rem] p-8 flex flex-col gap-6 shadow-2xl"
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+      >
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-bold text-text-primary tracking-tight">{t.compartilharVia}</h3>
+          <button onClick={onClose} className="p-2 text-text-secondary hover:bg-bg-primary rounded-full transition-colors"><X className="w-5 h-5" /></button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3">
+          <a 
+            href={whatsappUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-4 p-4 rounded-2xl bg-[#25D366]/10 text-[#25D366] font-bold hover:bg-[#25D366]/20 transition-all border border-[#25D366]/20 active:scale-95"
+          >
+            <div className="bg-[#25D366] text-white p-2 rounded-xl">
+              <MessageCircle className="w-5 h-5" />
+            </div>
+            <span>{t.whatsapp}</span>
+          </a>
+          
+          <a 
+            href={telegramUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-4 p-4 rounded-2xl bg-[#0088cc]/10 text-[#0088cc] font-bold hover:bg-[#0088cc]/20 transition-all border border-[#0088cc]/20 active:scale-95"
+          >
+            <div className="bg-[#0088cc] text-white p-2 rounded-xl">
+              <Send className="w-5 h-5" />
+            </div>
+            <span>{t.telegram}</span>
+          </a>
+
+          <button 
+            onClick={copyToClipboard}
+            className="flex items-center gap-4 p-4 rounded-2xl bg-bg-secondary text-text-primary font-bold hover:bg-bg-card transition-all border border-border active:scale-95"
+          >
+            <div className="bg-text-secondary text-white p-2 rounded-xl">
+              <Copy className="w-5 h-5" />
+            </div>
+            <span>{t.copiar}</span>
+          </button>
+        </div>
+
+        <button 
+          onClick={onClose}
+          className="w-full h-12 bg-bg-secondary text-text-primary rounded-xl font-bold active:scale-95 transition-all text-sm mt-2"
+        >
+          {t.fechar || 'Fechar'}
+        </button>
+      </motion.div>
+    </div>
   );
 }
 

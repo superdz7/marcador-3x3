@@ -889,26 +889,24 @@ export default function App() {
             </div>
 
             {/* Add Player Form */}
-            <div className="glass-card rounded-3xl p-3.5 flex flex-col gap-4">
+            <div className="glass-card rounded-2xl p-3 flex flex-col gap-3 mx-1">
               <div className="flex gap-2 items-center">
-                <div className="flex-1 flex gap-2">
-                  <input 
-                    type="text"
-                    placeholder={t.nomeJogador}
-                    className="flex-1 min-w-0 bg-bg-secondary rounded-2xl px-4 py-3 text-sm font-semibold text-text-primary outline-accent placeholder:text-text-secondary/50"
-                    value={newPlayerName}
-                    onChange={(e) => setNewPlayerName(e.target.value)}
-                  />
-                  <input 
-                    type="text"
-                    placeholder={t.numeroJogador || 'Nº'}
-                    className="w-14 bg-bg-secondary rounded-2xl px-1 py-3 text-sm font-bold text-center text-text-primary outline-accent placeholder:text-text-secondary/50"
-                    value={newPlayerNumber}
-                    onChange={(e) => setNewPlayerNumber(e.target.value)}
-                  />
-                </div>
+                <input 
+                  type="text"
+                  placeholder={t.nomeJogador}
+                  className="flex-1 min-w-0 bg-bg-secondary rounded-xl px-3 py-2 text-sm font-semibold text-text-primary outline-accent placeholder:text-text-secondary/50"
+                  value={newPlayerName}
+                  onChange={(e) => setNewPlayerName(e.target.value)}
+                />
+                <input 
+                  type="text"
+                  placeholder={t.numeroJogador || 'Nº'}
+                  className="w-12 bg-bg-secondary rounded-xl px-1 py-2 text-sm font-bold text-center text-text-primary outline-accent placeholder:text-text-secondary/50"
+                  value={newPlayerNumber}
+                  onChange={(e) => setNewPlayerNumber(e.target.value)}
+                />
                 <motion.button
-                  className="w-11 h-11 bg-accent text-white rounded-2xl shadow-lg shadow-accent/20 flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+                  className="w-10 h-10 bg-accent text-white rounded-xl shadow-lg shadow-accent/20 flex items-center justify-center shrink-0 active:scale-95 transition-transform"
                   onClick={addPlayer}
                 >
                   <Plus className="w-5 h-5" />
@@ -1529,28 +1527,28 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
                      player.stats.ft.made;
   
   return (
-    <div className="glass-card rounded-[2.5rem] p-6 space-y-6 shadow-[0_20px_40px_rgba(0,0,0,0.1)]">
-      <div className="flex justify-between items-center border-b border-border/40 pb-4">
+    <div className="glass-card rounded-[2.5rem] p-5 space-y-5 shadow-[0_15px_30px_rgba(0,0,0,0.08)]">
+      <div className="flex justify-between items-start pb-4 border-b border-border/20">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-accent/20">
+          <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-white font-black text-base shadow-[0_4px_12px_rgba(255,149,0,0.3)] shrink-0">
             {player.number || '00'}
           </div>
-          <div>
-            <h3 className="font-bold text-text-primary tracking-tight leading-none text-lg uppercase">{player.name}</h3>
-            <p className="text-[10px] font-bold text-accent uppercase tracking-widest mt-1.5 flex items-center gap-1.5">
-              <span className="w-1 h-1 rounded-full bg-accent" /> Total: {totalPoints} {t.pts}
+          <div className="min-w-0">
+            <h3 className="font-black text-text-primary tracking-tight text-lg uppercase leading-none truncate">{player.name}</h3>
+            <p className="text-[10px] font-black text-accent uppercase tracking-widest mt-1.5 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent" /> TOTAL: {totalPoints} {t.pts}
             </p>
           </div>
         </div>
         <button 
           onClick={() => removePlayer(player.id)} 
-          className="w-10 h-10 flex items-center justify-center text-text-secondary hover:text-red-500 bg-bg-secondary rounded-full transition-all"
+          className="w-9 h-9 flex items-center justify-center text-text-secondary hover:bg-bg-secondary rounded-full transition-all border border-border/10 shrink-0"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {[
           { key: 'pts2' as const, label: gameMode === '3x3' ? '1 Ponto' : t.pts2 },
           { key: 'pts3' as const, label: gameMode === '3x3' ? '2 Pontos' : t.pts3 },
@@ -1559,23 +1557,23 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
           const total = player.stats[cat.key].made + player.stats[cat.key].missed;
           const perc = total > 0 ? ((player.stats[cat.key].made / total) * 100).toFixed(1) : '0.0';
           return (
-            <div key={cat.key} className="bg-bg-secondary/40 rounded-3xl p-4 flex flex-col gap-3">
+            <div key={cat.key} className="space-y-2">
               <div className="flex justify-between items-center px-1">
-                <span className="text-xs font-bold text-text-primary tracking-tight">{cat.label}</span>
-                <span className="text-[10px] font-bold text-accent font-mono">{perc}%</span>
+                <span className="text-sm font-black text-text-primary tracking-tight">{cat.label}</span>
+                <span className="text-[10px] font-black text-accent">{perc}%</span>
               </div>
               
-              <div className="flex items-center gap-4">
-                <div className="flex-1 flex flex-col gap-1.5">
-                  <span className="text-[9px] font-bold text-text-secondary uppercase tracking-widest px-1">{t.acertou}</span>
-                  <div className="flex items-center justify-between bg-bg-secondary rounded-2xl p-1 shadow-inner">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <span className="text-[8px] font-black text-text-secondary uppercase tracking-[0.15em] px-1">{t.acertou}</span>
+                  <div className="flex items-center justify-between bg-bg-secondary/50 rounded-2xl p-0.5 border border-border/5">
                     <button 
                       onClick={() => updatePlayerStat(player.id, cat.key, 'made', -1)}
-                      className="w-8 h-8 flex items-center justify-center text-text-secondary active:scale-90 transition-transform"
+                      className="w-8 h-8 flex items-center justify-center text-text-secondary active:scale-90 transition-transform opacity-30 hover:opacity-100"
                     >
-                      <Minus className="w-4 h-4" />
+                      <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="font-bold text-sm tabular-nums">{player.stats[cat.key].made}</span>
+                    <span className="font-black text-sm tabular-nums text-text-primary">{player.stats[cat.key].made}</span>
                     <button 
                       onClick={() => updatePlayerStat(player.id, cat.key, 'made', 1)}
                       className="w-8 h-8 flex items-center justify-center text-accent active:scale-90 transition-transform"
@@ -1585,16 +1583,16 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
                   </div>
                 </div>
 
-                <div className="flex-1 flex flex-col gap-1.5">
-                  <span className="text-[9px] font-bold text-text-secondary uppercase tracking-widest px-1">{t.errou}</span>
-                  <div className="flex items-center justify-between bg-bg-secondary rounded-2xl p-1 shadow-inner">
+                <div className="space-y-1.5">
+                  <span className="text-[8px] font-black text-text-secondary uppercase tracking-[0.15em] px-1">{t.errou}</span>
+                  <div className="flex items-center justify-between bg-bg-secondary/50 rounded-2xl p-0.5 border border-border/5">
                     <button 
                       onClick={() => updatePlayerStat(player.id, cat.key, 'missed', -1)}
-                      className="w-8 h-8 flex items-center justify-center text-text-secondary active:scale-90 transition-transform"
+                      className="w-8 h-8 flex items-center justify-center text-text-secondary active:scale-90 transition-transform opacity-30 hover:opacity-100"
                     >
-                      <Minus className="w-4 h-4" />
+                      <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="font-bold text-sm tabular-nums">{player.stats[cat.key].missed}</span>
+                    <span className="font-black text-sm tabular-nums text-text-primary">{player.stats[cat.key].missed}</span>
                     <button 
                       onClick={() => updatePlayerStat(player.id, cat.key, 'missed', 1)}
                       className="w-8 h-8 flex items-center justify-center text-text-secondary active:scale-90 transition-transform"

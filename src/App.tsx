@@ -72,7 +72,7 @@ const TRANSLATIONS: any = {
   pt: {
     placar: 'PLACAR',
     historico: 'HISTÓRICO',
-    estatisticas: 'ESTATÍSTICAS',
+    estatisticas: 'Estatísticas',
     opcoes: 'OPÇÕES',
     casa: 'CASA',
     visitante: 'VISITANTE',
@@ -131,7 +131,7 @@ const TRANSLATIONS: any = {
   en: {
     placar: 'SCOREBOARD',
     historico: 'HISTORY',
-    estatisticas: 'STATS',
+    estatisticas: 'Stats',
     opcoes: 'OPTIONS',
     casa: 'HOME',
     visitante: 'AWAY',
@@ -190,7 +190,7 @@ const TRANSLATIONS: any = {
   es: {
     placar: 'MARCADOR',
     historico: 'HISTORIAL',
-    estatisticas: 'ESTADÍSTICAS',
+    estatisticas: 'Estadísticas',
     opcoes: 'OPCIONES',
     casa: 'LOCAL',
     visitante: 'VISITANTE',
@@ -672,7 +672,7 @@ export default function App() {
   }, [shotClock, isRunning, shotClockSoundEnabled, shotClockBuzzerPlayed]);
 
   return (
-    <div className="min-h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center px-4 py-2 sm:px-6 sm:py-3 pb-24 select-none transition-colors duration-300">
+    <div className="min-h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center px-4 py-2 sm:px-6 sm:py-3 pb-24 select-none transition-colors duration-300 overflow-hidden">
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
@@ -680,7 +680,7 @@ export default function App() {
             initial={{ opacity: 0, y: -50, x: '-50%' }}
             animate={{ opacity: 1, y: 20, x: '-50%' }}
             exit={{ opacity: 0, y: -50, x: '-50%' }}
-            className={`fixed left-1/2 z-[100] px-6 py-3 rounded-2xl shadow-2xl font-bold text-xs flex items-center gap-2 border ${
+            className={`fixed left-1/2 z-[100] px-6 py-3 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] font-bold text-xs flex items-center gap-2 border ${
               toast.type === 'error' ? 'bg-red-500 text-white border-red-400' : 'bg-[#FF6B35] text-white border-[#FF8B55]'
             }`}
           >
@@ -692,11 +692,11 @@ export default function App() {
 
       {/* Header - Compact */}
       <header className="w-full max-w-2xl flex items-center gap-2 mb-3 px-2">
-        <div className="bg-[#FF6B35] p-1 rounded-full shadow-md">
+        <div className="bg-[#FF6B35] p-1 rounded-full shadow-lg">
           <Dribbble className="w-4 h-4 text-white" />
         </div>
         <h1 className="text-xl font-black tracking-tighter text-[#FF6B35]">Basquete</h1>
-        <div className="ml-auto text-[10px] font-bold text-text-secondary uppercase tracking-widest bg-bg-card px-2 py-1 rounded-full shadow-sm">
+        <div className="ml-auto text-[10px] font-bold text-text-secondary uppercase tracking-widest bg-bg-card px-2 py-1 rounded-full shadow-md">
           {MODES[gameMode].label}
         </div>
       </header>
@@ -709,7 +709,7 @@ export default function App() {
             <div className="flex gap-3 h-28 sm:h-36 md:h-44 shrink-0">
               {/* Game Timer */}
               <motion.div 
-                className={`flex-[3.5] bg-bg-card rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] border-y-4 border-[#FF6B35] flex flex-col items-center justify-center relative overflow-hidden [container-type:inline-size] ${hasStarted.current ? 'cursor-default' : 'cursor-pointer'}`}
+                className={`flex-[3.5] bg-bg-card rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.25)] border-y-4 border-[#FF6B35] flex flex-col items-center justify-center relative overflow-hidden [container-type:inline-size] ${hasStarted.current ? 'cursor-default' : 'cursor-pointer'}`}
                 whileTap={hasStarted.current ? {} : { scale: 0.98 }}
                 onClick={() => {
                   if (hasStarted.current) {
@@ -728,7 +728,7 @@ export default function App() {
               {/* Shot Clock */}
               <div className="flex-1 flex flex-col gap-2">
                 <motion.div 
-                  className="flex-1 bg-bg-card rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-center justify-center relative cursor-pointer"
+                  className="flex-1 bg-bg-card rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.25)] flex flex-col items-center justify-center relative cursor-pointer"
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setShotClock(12)}
                 >
@@ -740,7 +740,7 @@ export default function App() {
                 
                 {(gameMode === 'fiba' || gameMode === 'nba') && (
                   <motion.button
-                    className="h-10 bg-bg-card rounded-xl shadow-sm border border-border text-[#FF6B35] font-black text-xs flex items-center justify-center"
+                    className="h-10 bg-bg-card rounded-xl shadow-md border border-border text-[#FF6B35] font-black text-xs flex items-center justify-center"
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShotClock(24)}
                   >
@@ -821,14 +821,14 @@ export default function App() {
           </>
         ) : activeTab === 'estatisticas' ? (
           <div className="flex-1 flex flex-col gap-4 p-1 sm:p-2 overflow-y-auto no-scrollbar">
-            <div className="flex justify-between items-center px-2">
+            <div className="flex items-center px-2">
               <h2 className="text-lg font-black text-text-primary">{t.estatisticas}</h2>
-              <div className="flex gap-2">
+              <div className="flex gap-2 ml-auto">
                 <motion.button 
                   onClick={handleDraft}
-                  className="text-[10px] font-bold text-[#FF6B35] uppercase tracking-widest bg-bg-card px-3 py-1.5 rounded-full border border-border shadow-sm active:scale-95 transition-transform flex items-center gap-1.5"
+                  className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest bg-bg-card px-2.5 py-1 rounded-full border border-border shadow-sm active:scale-95 transition-transform flex items-center gap-1"
                 >
-                  <Users className="w-3 h-3" />
+                  <Users className="w-2.5 h-2.5" />
                   {t.sorteio}
                 </motion.button>
                 {drawnTeams.length > 0 && (
@@ -836,7 +836,7 @@ export default function App() {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     onClick={() => setDrawnTeams([])}
-                    className="text-[10px] font-bold text-[#FF6B35] uppercase tracking-widest bg-bg-card px-3 py-1.5 rounded-full border border-border shadow-sm active:scale-95 transition-transform"
+                    className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest bg-bg-card px-2.5 py-1 rounded-full border border-border shadow-sm active:scale-95 transition-transform"
                   >
                     {t.limparSorteio}
                   </motion.button>
@@ -1294,7 +1294,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
   const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
 
   return (
-    <div className="bg-bg-card rounded-xl p-3 shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-center justify-between transition-colors duration-300 min-h-[180px] sm:min-h-[220px] md:min-h-[260px]">
+    <div className="bg-bg-card rounded-xl p-3 shadow-[0_20px_50px_rgba(0,0,0,0.25)] flex flex-col items-center justify-between transition-colors duration-300 min-h-[240px] sm:min-h-[280px] md:min-h-[320px]">
       <div className="text-center w-full">
         <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest">{label}</span>
         {isEditing ? (
@@ -1380,7 +1380,7 @@ function FoulCard({ label, fouls, onAddFoul, t, gameMode }: any) {
   
   return (
     <div 
-      className={`rounded-xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.12)] flex flex-col items-start gap-1 cursor-pointer transition-colors duration-300 ${isBonus ? 'bg-[#FF6B35]' : 'bg-bg-card'}`}
+      className={`rounded-xl p-2 shadow-[0_20px_50px_rgba(0,0,0,0.25)] flex flex-col items-start gap-1 cursor-pointer transition-colors duration-300 min-h-[70px] sm:min-h-[80px] ${isBonus ? 'bg-[#FF6B35]' : 'bg-bg-card'}`}
       onClick={onAddFoul}
     >
       <div className="w-full flex justify-between items-center min-h-[1.5rem]">
@@ -1402,7 +1402,7 @@ function FoulCard({ label, fouls, onAddFoul, t, gameMode }: any) {
 function ControlButton({ icon, label, onClick, disabled }: any) {
   return (
     <motion.button
-      className={`flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-bg-card shadow-[0_10px_40px_rgba(0,0,0,0.12)] border border-border transition-colors duration-300 ${disabled ? 'opacity-50 grayscale' : ''}`}
+      className={`flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-bg-card shadow-[0_20px_50px_rgba(0,0,0,0.25)] border border-border transition-colors duration-300 ${disabled ? 'opacity-50 grayscale' : ''}`}
       whileHover={disabled ? {} : { scale: 1.05, backgroundColor: 'var(--color-bg-primary)' }}
       whileTap={disabled ? {} : { scale: 0.95 }}
       onClick={onClick}

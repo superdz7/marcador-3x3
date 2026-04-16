@@ -76,6 +76,8 @@ const TRANSLATIONS: any = {
     opcoes: 'OPÇÕES',
     casa: 'CASA',
     visitante: 'VISITANTE',
+    faltasDaCasa: 'Faltas da\nCasa',
+    faltasDoVisitante: 'Faltas do\nVisitante',
     pts: 'PTS',
     faltas: 'Faltas',
     bonus: 'Bônus',
@@ -135,6 +137,8 @@ const TRANSLATIONS: any = {
     opcoes: 'OPTIONS',
     casa: 'HOME',
     visitante: 'AWAY',
+    faltasDaCasa: 'Home\nFouls',
+    faltasDoVisitante: 'Away\nFouls',
     pts: 'PTS',
     faltas: 'Fouls',
     bonus: 'Bonus',
@@ -672,44 +676,59 @@ export default function App() {
   }, [shotClock, isRunning, shotClockSoundEnabled, shotClockBuzzerPlayed]);
 
   return (
-    <div className="min-h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center px-4 py-2 sm:px-6 sm:py-3 pb-24 select-none transition-colors duration-300 overflow-hidden">
+    <div className="min-h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center select-none transition-colors duration-500 overflow-hidden">
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
           <motion.div 
-            initial={{ opacity: 0, y: -50, x: '-50%' }}
-            animate={{ opacity: 1, y: 20, x: '-50%' }}
-            exit={{ opacity: 0, y: -50, x: '-50%' }}
-            className={`fixed left-1/2 z-[100] px-6 py-3 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] font-bold text-xs flex items-center gap-2 border ${
-              toast.type === 'error' ? 'bg-red-500 text-white border-red-400' : 'bg-[#FF6B35] text-white border-[#FF8B55]'
-            }`}
+            initial={{ opacity: 0, y: -20, x: '-50%' }}
+            animate={{ opacity: 1, y: 24, x: '-50%' }}
+            exit={{ opacity: 0, y: -20, x: '-50%' }}
+            className="fixed left-1/2 z-[100] px-5 py-2.5 rounded-full glass-card shadow-2xl font-semibold text-xs flex items-center gap-2 border border-white/20"
           >
-            {toast.type === 'error' ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
-            {toast.message}
+            {toast.type === 'error' ? <X className="w-4 h-4 text-red-500" /> : <Check className="w-4 h-4 text-green-500" />}
+            <span className="text-text-primary">{toast.message}</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Header - Compact */}
-      <header className="w-full max-w-2xl flex items-center gap-2 mb-3 px-2">
-        <div className="bg-[#FF6B35] p-1 rounded-full shadow-lg">
-          <Dribbble className="w-4 h-4 text-white" />
+      {/* Header - Glassmorphism */}
+      <header className="w-full sticky top-0 z-40 glass px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center shadow-lg overflow-hidden border border-accent/20">
+            <img 
+              src="https://img.icons8.com/color/96/basketball.png" 
+              alt="Basketball"
+              className="w-7 h-7 object-contain"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+            <div className="hidden">
+              <Dribbble className="w-6 h-6 text-accent" />
+            </div>
+          </div>
+          <div>
+            <h1 className="text-lg font-bold tracking-tight text-text-primary leading-tight">Basquete</h1>
+          </div>
         </div>
-        <h1 className="text-xl font-black tracking-tighter text-[#FF6B35]">Basquete</h1>
-        <div className="ml-auto text-[10px] font-bold text-text-secondary uppercase tracking-widest bg-bg-card px-2 py-1 rounded-full shadow-md">
+        
+        <div className="text-[10px] font-bold text-accent bg-accent/10 px-3 py-1 rounded-full border border-accent/20 uppercase tracking-widest shadow-sm">
           {MODES[gameMode].label}
         </div>
       </header>
 
-      {/* Main Scoreboard Area */}
-      <main className="w-full max-w-2xl flex flex-col gap-3">
+      {/* Main Content Area */}
+      <main className="w-full max-w-2xl flex-1 flex flex-col gap-4 p-4 pb-32">
         {activeTab === 'placar' ? (
           <>
             {/* Timer & Shot Clock Row */}
-            <div className="flex gap-3 h-28 sm:h-36 md:h-44 shrink-0">
+            <div className="flex gap-4 h-32 sm:h-40 md:h-48 shrink-0">
               {/* Game Timer */}
               <motion.div 
-                className={`flex-[3.5] bg-bg-card rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.25)] border-y-4 border-[#FF6B35] flex flex-col items-center justify-center relative overflow-hidden [container-type:inline-size] ${hasStarted.current ? 'cursor-default' : 'cursor-pointer'}`}
+                className={`flex-[3] glass-card rounded-3xl flex flex-col items-center justify-center relative overflow-hidden group ${hasStarted.current ? 'cursor-default' : 'cursor-pointer'}`}
                 whileTap={hasStarted.current ? {} : { scale: 0.98 }}
                 onClick={() => {
                   if (hasStarted.current) {
@@ -719,29 +738,28 @@ export default function App() {
                   }
                 }}
               >
-                <span className="text-[9px] font-bold text-text-secondary uppercase tracking-widest absolute top-2">{t.tempoJogo}</span>
-                <div className="text-[26cqw] font-bold tracking-tighter text-text-primary mt-4 font-display leading-none">
+                <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest absolute top-4">{t.tempoJogo}</span>
+                <div className="text-[22cqw] font-bold tracking-tighter text-text-primary mt-2 font-display leading-none text-digit">
                   {formatTime(gameTime)}
                 </div>
               </motion.div>
 
               {/* Shot Clock */}
-              <div className="flex-1 flex flex-col gap-2">
+              <div className="flex-1 flex flex-col gap-3">
                 <motion.div 
-                  className="flex-1 bg-bg-card rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.25)] flex flex-col items-center justify-center relative cursor-pointer"
-                  whileTap={{ scale: 0.9 }}
+                  className="flex-1 glass-card rounded-3xl flex flex-col items-center justify-center relative cursor-pointer active:scale-95 transition-transform"
                   onClick={() => setShotClock(12)}
                 >
-                  <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest absolute top-2">{t.posse}</span>
-                  <div className={`text-4xl font-black text-[#FF6B35] mt-2 font-mono ${shotClock <= 3 && shotClock > 0 ? 'animate-pulse' : ''}`}>
+                  <span className="text-[9px] font-bold text-accent uppercase tracking-widest absolute top-3 leading-none">{t.posse}</span>
+                  <div className={`text-4xl font-black text-accent mt-2 font-mono text-digit ${shotClock <= 3 && shotClock > 0 ? 'animate-pulse' : ''}`}>
                     {shotClock.toString().padStart(2, '0')}
                   </div>
                 </motion.div>
                 
                 {(gameMode === 'fiba' || gameMode === 'nba') && (
                   <motion.button
-                    className="h-10 bg-bg-card rounded-xl shadow-md border border-border text-[#FF6B35] font-black text-xs flex items-center justify-center"
-                    whileTap={{ scale: 0.95 }}
+                    className="h-12 glass-card rounded-2xl text-accent font-black text-xs flex items-center justify-center active:scale-95 transition-transform"
                     onClick={() => setShotClock(24)}
                   >
                     24s
@@ -751,7 +769,7 @@ export default function App() {
             </div>
 
             {/* Teams Row */}
-            <div className="grid grid-cols-2 gap-3 shrink-0">
+            <div className="grid grid-cols-2 gap-4 shrink-0">
               <TeamCard 
                 label={t.casa}
                 name={homeName}
@@ -776,17 +794,17 @@ export default function App() {
               />
             </div>
 
-            {/* Fouls Row - Separated */}
-            <div className="grid grid-cols-2 gap-3 shrink-0">
+            {/* Fouls Row */}
+            <div className="grid grid-cols-2 gap-4 shrink-0">
               <FoulCard 
-                label={<>{t.faltas}<br/>{t.casa}</>}
+                label={t.faltasDaCasa}
                 fouls={homeFouls}
                 onAddFoul={() => updateFouls('home')}
                 t={t}
                 gameMode={gameMode}
               />
               <FoulCard 
-                label={<>{t.faltas}<br/>{t.visitante}</>}
+                label={t.faltasDoVisitante}
                 fouls={visitorFouls}
                 onAddFoul={() => updateFouls('visitor')}
                 t={t}
@@ -795,7 +813,7 @@ export default function App() {
             </div>
 
             {/* Controls Row */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-2 shrink-0">
+            <div className="grid grid-cols-3 gap-4 mt-2 shrink-0">
               <ControlButton 
                 icon={<Undo2 className="w-5 h-5" />} 
                 label={t.desfazer} 
@@ -804,12 +822,11 @@ export default function App() {
               />
               
               <motion.button
-                className={`col-span-1 h-14 rounded-xl flex items-center justify-center shadow-lg transition-colors ${isRunning ? 'bg-text-primary text-bg-card' : 'bg-[#FF6B35] text-white'}`}
-                whileHover={{ scale: 1.02 }}
+                className={`h-16 rounded-3xl flex items-center justify-center shadow-2xl transition-all duration-300 ${isRunning ? 'bg-text-primary text-bg-primary scale-[1.02]' : 'bg-accent text-white shadow-accent/30'}`}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsRunning(!isRunning)}
               >
-                {isRunning ? <Pause className="w-7 h-7 fill-current" /> : <Play className="w-7 h-7 fill-current ml-1" />}
+                {isRunning ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
               </motion.button>
 
               <ControlButton 
@@ -820,23 +837,23 @@ export default function App() {
             </div>
           </>
         ) : activeTab === 'estatisticas' ? (
-          <div className="flex-1 flex flex-col gap-4 p-1 sm:p-2 overflow-y-auto no-scrollbar">
+          <div className="flex-1 flex flex-col gap-6 overflow-y-auto no-scrollbar pb-10">
             <div className="flex items-center px-2">
-              <h2 className="text-lg font-black text-text-primary">{t.estatisticas}</h2>
+              <h2 className="text-lg font-bold text-text-primary tracking-tight">{t.estatisticas}</h2>
               <div className="flex gap-2 ml-auto">
                 <motion.button 
                   onClick={handleDraft}
-                  className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest bg-bg-card px-2.5 py-1 rounded-full border border-border shadow-sm active:scale-95 transition-transform flex items-center gap-1"
+                  className="text-[11px] font-bold text-accent uppercase tracking-widest bg-accent/10 px-4 py-2 rounded-full border border-accent/20 active:scale-95 transition-all flex items-center gap-2"
                 >
-                  <Users className="w-2.5 h-2.5" />
+                  <Users className="w-3.5 h-3.5" />
                   {t.sorteio}
                 </motion.button>
                 {drawnTeams.length > 0 && (
                   <motion.button 
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     onClick={() => setDrawnTeams([])}
-                    className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest bg-bg-card px-2.5 py-1 rounded-full border border-border shadow-sm active:scale-95 transition-transform"
+                    className="text-[11px] font-bold text-text-secondary uppercase tracking-widest bg-bg-secondary px-4 py-2 rounded-full border border-border/50 active:scale-95 transition-all"
                   >
                     {t.limparSorteio}
                   </motion.button>
@@ -845,42 +862,45 @@ export default function App() {
             </div>
 
             {/* Add Player Form */}
-            <div className="bg-bg-card rounded-xl p-3 sm:p-4 shadow-sm space-y-3">
-              <div className="flex gap-2 items-center">
-                <input 
-                  type="text"
-                  placeholder={t.nomeJogador}
-                  className="flex-1 min-w-0 bg-bg-primary rounded-xl px-3 sm:px-4 py-2 text-sm font-bold text-text-primary outline-[#FF6B35]"
-                  value={newPlayerName}
-                  onChange={(e) => setNewPlayerName(e.target.value)}
-                />
-                <input 
-                  type="text"
-                  placeholder={t.numeroJogador}
-                  className="w-12 sm:w-16 bg-bg-primary rounded-xl px-1 sm:px-2 py-2 text-sm font-bold text-center text-text-primary outline-[#FF6B35]"
-                  value={newPlayerNumber}
-                  onChange={(e) => setNewPlayerNumber(e.target.value)}
-                />
+            <div className="glass-card rounded-3xl p-4 flex flex-col gap-4">
+              <div className="flex gap-3 items-center">
+                <div className="flex-1 flex gap-2">
+                  <input 
+                    type="text"
+                    placeholder={t.nomeJogador}
+                    className="flex-1 min-w-0 bg-bg-secondary rounded-2xl px-4 py-3 text-sm font-semibold text-text-primary outline-accent placeholder:text-text-secondary/50"
+                    value={newPlayerName}
+                    onChange={(e) => setNewPlayerName(e.target.value)}
+                  />
+                  <input 
+                    type="text"
+                    placeholder={t.numeroJogador}
+                    className="w-16 bg-bg-secondary rounded-2xl px-2 py-3 text-sm font-bold text-center text-text-primary outline-accent placeholder:text-text-secondary/50"
+                    value={newPlayerNumber}
+                    onChange={(e) => setNewPlayerNumber(e.target.value)}
+                  />
+                </div>
                 <motion.button
-                  className="p-2 bg-[#FF6B35] text-white rounded-xl shadow-md shrink-0"
-                  whileTap={{ scale: 0.95 }}
+                  className="w-12 h-12 bg-accent text-white rounded-2xl shadow-lg shadow-accent/20 flex items-center justify-center shrink-0 active:scale-95 transition-transform"
                   onClick={addPlayer}
                 >
-                  <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <Plus className="w-6 h-6" />
                 </motion.button>
               </div>
             </div>
 
             {/* Players Selection Badges */}
-            <div className="space-y-4 px-2">
+            <div className="space-y-6 px-1">
               {drawnTeams.length > 0 ? (
                 drawnTeams.map((team, teamIdx) => (
-                  <div key={teamIdx} className="space-y-2">
-                    <h3 className="text-[9px] font-black text-text-secondary uppercase tracking-widest flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B35]"></div>
-                      {t.equipe} {String.fromCharCode(65 + teamIdx)}
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
+                  <div key={teamIdx} className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1 w-4 bg-accent rounded-full" />
+                      <h3 className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em]">
+                        {t.equipe} {String.fromCharCode(65 + teamIdx)}
+                      </h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2.5">
                       {team.map(player => (
                         <PlayerBadge 
                           key={player.id}
@@ -893,7 +913,7 @@ export default function App() {
                   </div>
                 ))
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2.5">
                   {players.map(player => (
                     <PlayerBadge 
                       key={player.id}
@@ -907,7 +927,7 @@ export default function App() {
             </div>
 
             {/* Selected Player Card */}
-            <div className="pb-4">
+            <div className="pb-8">
               {selectedPlayerId && players.find(p => p.id === selectedPlayerId) ? (
                 <PlayerStatCard 
                   player={players.find(p => p.id === selectedPlayerId)} 
@@ -917,188 +937,212 @@ export default function App() {
                   removePlayer={removePlayer} 
                 />
               ) : players.length > 0 ? (
-                <div className="h-40 flex flex-col items-center justify-center text-text-secondary text-xs font-bold bg-bg-card rounded-2xl border border-dashed border-border gap-2">
-                  <Dribbble className="w-8 h-8 opacity-20 animate-bounce" />
-                  Selecione um jogador acima
+                <div className="h-48 glass-card rounded-[2.5rem] flex flex-col items-center justify-center text-text-secondary text-sm font-medium border border-dashed border-border/50 gap-4">
+                  <div className="w-12 h-12 bg-bg-secondary rounded-full flex items-center justify-center">
+                    <Dribbble className="w-6 h-6 opacity-30 animate-pulse text-accent" />
+                  </div>
+                  <p className="tracking-tight">Selecione um jogador acima</p>
                 </div>
               ) : null}
             </div>
           </div>
         ) : activeTab === 'historico' ? (
-          <div className="flex-1 flex flex-col gap-3 min-h-0 mb-2">
+          <div className="flex-1 flex flex-col gap-6 min-h-0 mb-4 pb-20">
             <div className="flex justify-between items-center px-2">
-              <h2 className="text-lg font-black text-text-primary">{t.historicoPartida}</h2>
+              <h2 className="text-lg font-bold text-text-primary tracking-tight">{t.historicoPartida}</h2>
               <motion.button
-                className="p-2 bg-[#FF6B35] text-white rounded-xl shadow-md flex items-center gap-2 text-[10px] font-bold"
-                whileTap={{ scale: 0.95 }}
+                className="p-3 bg-accent text-white rounded-2xl shadow-xl shadow-accent/20 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest active:scale-95 transition-transform"
                 onClick={shareHistory}
               >
                 <Share2 className="w-4 h-4" />
                 {t.compartilhar}
               </motion.button>
             </div>
-            <div className="flex-1 bg-bg-card rounded-2xl shadow-lg p-4 overflow-y-auto space-y-3 no-scrollbar">
+            <div className="flex-1 glass-card rounded-[2.5rem] p-6 overflow-y-auto no-scrollbar flex flex-col">
               {history.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-text-secondary gap-2">
-                  <History className="w-12 h-12 opacity-20" />
-                  <p className="text-sm font-bold">{t.nenhumaAcao}</p>
+                <div className="flex-1 flex flex-col items-center justify-center text-text-secondary gap-4 opacity-40">
+                  <div className="w-16 h-16 bg-bg-secondary rounded-full flex items-center justify-center">
+                    <History className="w-8 h-8" />
+                  </div>
+                  <p className="text-sm font-medium tracking-tight">{t.nenhumaAcao}</p>
                 </div>
               ) : (
-                history.map((action) => (
-                  <div key={action.id} className="flex items-start gap-3 border-b border-border pb-2">
-                    <div className="text-[10px] font-mono text-text-secondary pt-1">
-                      {new Date(action.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-text-primary">{action.description}</p>
-                      <p className="text-[10px] text-text-secondary">{t.placar}: {action.state.homeScore} x {action.state.visitorScore}</p>
-                    </div>
-                  </div>
-                ))
+                <div className="space-y-4">
+                  {history.map((action, idx) => (
+                    <motion.div 
+                      key={action.id} 
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="flex items-center gap-4 group p-1"
+                    >
+                      <div className="text-[10px] font-mono text-text-secondary w-16 tabular-nums">
+                        {new Date(action.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </div>
+                      <div className="flex-1 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-text-primary tracking-tight leading-none">{action.description}</p>
+                          <p className="text-[10px] font-bold text-accent mt-1.5 uppercase tracking-widest leading-none">
+                            {action.state.homeScore} — {action.state.visitorScore}
+                          </p>
+                        </div>
+                        <div className="w-1.5 h-1.5 rounded-full bg-border group-hover:bg-accent transition-colors" />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
         ) : activeTab === 'opcoes' ? (
-          <div className="flex-1 flex flex-col gap-4 p-2 overflow-y-auto no-scrollbar">
-            <h2 className="text-lg font-black text-text-primary px-2">{t.configuracoes}</h2>
+          <div className="flex-1 flex flex-col gap-8 pb-32 overflow-y-auto no-scrollbar">
+            <h2 className="text-lg font-bold text-text-primary px-2 tracking-tight">{t.configuracoes}</h2>
             
-            <div className="bg-bg-card rounded-xl p-4 shadow-sm space-y-6">
-              {/* Language Selection */}
-              <div className="space-y-3">
-                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest flex items-center gap-2">
-                  <Languages className="w-3 h-3 text-[#FF6B35]" /> {t.idioma}
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['pt', 'en', 'es'] as const).map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => setLanguage(lang)}
-                      className={`py-2 rounded-xl text-xs font-bold transition-all ${language === lang ? 'bg-[#FF6B35] text-white shadow-md' : 'bg-bg-primary text-text-secondary'}`}
-                    >
-                      {lang.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Theme Selection */}
-              <div className="space-y-3">
-                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest flex items-center gap-2">
-                  <Palette className="w-3 h-3 text-[#FF6B35]" /> {t.tema}
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setTheme('light')}
-                    className={`py-2 rounded-xl text-xs font-bold transition-all ${theme === 'light' ? 'bg-[#FF6B35] text-white shadow-md' : 'bg-bg-primary text-text-secondary'}`}
-                  >
-                    {t.claro}
-                  </button>
-                  <button
-                    onClick={() => setTheme('dark')}
-                    className={`py-2 rounded-xl text-xs font-bold transition-all ${theme === 'dark' ? 'bg-[#FF6B35] text-white shadow-md' : 'bg-bg-primary text-text-secondary'}`}
-                  >
-                    {t.escuro}
-                  </button>
-                </div>
-              </div>
-
-              {/* Game Mode Selection */}
-              <div className="space-y-3">
-                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest flex items-center gap-2">
-                  <Trophy className="w-3 h-3 text-[#FF6B35]" /> {t.modoJogo}
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(Object.keys(MODES) as Array<keyof typeof MODES>).map((mode) => (
-                    <button
-                      key={mode}
-                      disabled={hasStarted.current}
-                      onClick={() => {
-                        setGameMode(mode);
-                        setGameTime(MODES[mode].gameTime);
-                        setShotClock(MODES[mode].shotClock);
-                        setIsRunning(false);
-                      }}
-                      className={`py-2 rounded-xl text-xs font-bold transition-all ${gameMode === mode ? 'bg-[#FF6B35] text-white shadow-md' : 'bg-bg-primary text-text-secondary'} ${hasStarted.current ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      {MODES[mode].label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Wake Lock Toggle */}
-              <div className="flex items-center justify-between py-2 border-t border-border mt-4">
-                <div className="flex items-center gap-2">
-                  <MonitorSmartphone className="w-3 h-3 text-[#FF6B35]" />
-                  <span className="text-xs font-bold text-text-primary">{t.telaSempreLigada}</span>
-                </div>
-                <button
-                  onClick={() => setWakeLockEnabled(!wakeLockEnabled)}
-                  className={`w-12 h-6 rounded-full transition-colors relative ${wakeLockEnabled ? 'bg-[#FF6B35]' : 'bg-text-secondary'}`}
-                >
-                  <motion.div 
-                    className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm"
-                    animate={{ x: wakeLockEnabled ? 24 : 0 }}
-                  />
-                </button>
-              </div>
-
-              {/* Sound Settings */}
-              <div className="space-y-4 pt-4 border-t border-border">
-                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest flex items-center gap-2">
-                  <Volume2 className="w-3 h-3 text-[#FF6B35]" /> {t.sons}
-                </label>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-text-primary">{t.somTempoJogo}</span>
-                      <button 
-                        onClick={() => playBuzzer(true)}
-                        className="p-1.5 bg-bg-primary text-[#FF6B35] rounded-lg hover:bg-[#FF6B35]/10 transition-colors"
-                        title={t.testarSom}
+            <div className="flex flex-col gap-4">
+              {/* Group 1: General */}
+              <div className="glass-card rounded-[2rem] overflow-hidden">
+                {/* Language Selection */}
+                <div className="p-5 border-b border-border/40">
+                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
+                    <Languages className="w-3.5 h-3.5 text-accent" /> {t.idioma}
+                  </label>
+                  <div className="flex gap-2 bg-bg-secondary p-1 rounded-2xl">
+                    {(['pt', 'en', 'es'] as const).map((lang) => (
+                      <button
+                        key={lang}
+                        onClick={() => setLanguage(lang)}
+                        className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${language === lang ? 'bg-bg-card shadow-sm text-accent' : 'text-text-secondary hover:text-text-primary'}`}
                       >
-                        <Volume2 className="w-3.5 h-3.5" />
+                        {lang.toUpperCase()}
                       </button>
-                    </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Theme Selection */}
+                <div className="p-5 border-b border-border/40">
+                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
+                    <Palette className="w-3.5 h-3.5 text-accent" /> {t.tema}
+                  </label>
+                  <div className="flex gap-2 bg-bg-secondary p-1 rounded-2xl">
                     <button
-                      onClick={() => setGameEndSoundEnabled(!gameEndSoundEnabled)}
-                      className={`w-12 h-6 rounded-full transition-colors relative ${gameEndSoundEnabled ? 'bg-[#FF6B35]' : 'bg-text-secondary'}`}
+                      onClick={() => setTheme('light')}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${theme === 'light' ? 'bg-bg-card shadow-sm text-accent' : 'text-text-secondary hover:text-text-primary'}`}
                     >
-                      <motion.div 
-                        className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm"
-                        animate={{ x: gameEndSoundEnabled ? 24 : 0 }}
-                      />
+                      {t.claro}
+                    </button>
+                    <button
+                      onClick={() => setTheme('dark')}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${theme === 'dark' ? 'bg-bg-card shadow-sm text-accent' : 'text-text-secondary hover:text-text-primary'}`}
+                    >
+                      {t.escuro}
                     </button>
                   </div>
+                </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-text-primary">{t.somTempoPosse}</span>
-                      <button 
-                        onClick={() => playBuzzer(false)}
-                        className="p-1.5 bg-bg-primary text-[#FF6B35] rounded-lg hover:bg-[#FF6B35]/10 transition-colors"
-                        title={t.testarSom}
+                {/* Game Mode Selection */}
+                <div className="p-5">
+                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
+                    <Trophy className="w-3.5 h-3.5 text-accent" /> {t.modoJogo}
+                  </label>
+                  <div className="flex gap-2 bg-bg-secondary p-1 rounded-2xl">
+                    {(Object.keys(MODES) as Array<keyof typeof MODES>).map((mode) => (
+                      <button
+                        key={mode}
+                        disabled={hasStarted.current}
+                        onClick={() => {
+                          setGameMode(mode);
+                          setGameTime(MODES[mode].gameTime);
+                          setShotClock(MODES[mode].shotClock);
+                          setIsRunning(false);
+                        }}
+                        className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${gameMode === mode ? 'bg-bg-card shadow-sm text-accent' : 'text-text-secondary hover:text-text-primary'} ${hasStarted.current ? 'opacity-30 cursor-not-allowed' : ''}`}
                       >
-                        <Volume2 className="w-3.5 h-3.5" />
+                        {MODES[mode].label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Group 2: System */}
+              <div className="glass-card rounded-[2rem] overflow-hidden">
+                {/* Wake Lock */}
+                <div className="p-5 flex items-center justify-between border-b border-border/40">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <MonitorSmartphone className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-semibold text-text-primary tracking-tight">{t.telaSempreLigada}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setWakeLockEnabled(!wakeLockEnabled)}
+                    className={`w-12 h-6 rounded-full transition-all duration-300 relative ${wakeLockEnabled ? 'bg-green-500' : 'bg-border'}`}
+                  >
+                    <motion.div 
+                      className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md"
+                      animate={{ x: wakeLockEnabled ? 24 : 0 }}
+                    />
+                  </button>
+                </div>
+
+                {/* Sounds Section Header */}
+                <div className="p-5">
+                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2 mb-5">
+                    <Volume2 className="w-3.5 h-3.5 text-accent" /> {t.sons}
+                  </label>
+                  
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => playBuzzer(true)}
+                          className="w-10 h-10 bg-bg-secondary text-accent rounded-xl hover:bg-accent/10 transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                        >
+                          <Volume2 className="w-5 h-5" />
+                        </button>
+                        <span className="text-sm font-semibold text-text-primary tracking-tight">{t.somTempoJogo}</span>
+                      </div>
+                      <button
+                        onClick={() => setGameEndSoundEnabled(!gameEndSoundEnabled)}
+                        className={`w-12 h-6 rounded-full transition-all duration-300 relative ${gameEndSoundEnabled ? 'bg-green-500' : 'bg-border'}`}
+                      >
+                        <motion.div 
+                          className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md"
+                          animate={{ x: gameEndSoundEnabled ? 24 : 0 }}
+                        />
                       </button>
                     </div>
-                    <button
-                      onClick={() => setShotClockSoundEnabled(!shotClockSoundEnabled)}
-                      className={`w-12 h-6 rounded-full transition-colors relative ${shotClockSoundEnabled ? 'bg-[#FF6B35]' : 'bg-text-secondary'}`}
-                    >
-                      <motion.div 
-                        className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm"
-                        animate={{ x: shotClockSoundEnabled ? 24 : 0 }}
-                      />
-                    </button>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => playBuzzer(false)}
+                          className="w-10 h-10 bg-bg-secondary text-accent rounded-xl hover:bg-accent/10 transition-all active:scale-95 shadow-sm flex items-center justify-center"
+                        >
+                          <Volume2 className="w-5 h-5" />
+                        </button>
+                        <span className="text-sm font-semibold text-text-primary tracking-tight">{t.somTempoPosse}</span>
+                      </div>
+                      <button
+                        onClick={() => setShotClockSoundEnabled(!shotClockSoundEnabled)}
+                        className={`w-12 h-6 rounded-full transition-all duration-300 relative ${shotClockSoundEnabled ? 'bg-green-500' : 'bg-border'}`}
+                      >
+                        <motion.div 
+                          className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md"
+                          animate={{ x: shotClockSoundEnabled ? 24 : 0 }}
+                        />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="pt-4 text-right px-2">
-              <span className="text-[9px] font-bold text-text-secondary uppercase tracking-widest opacity-50">
+            <div className="pt-4 text-right pb-8 opacity-40">
+              <span className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em]">
                 desenvolvido por superdz7
               </span>
             </div>
@@ -1141,31 +1185,34 @@ export default function App() {
       {/* Draft Modal */}
       <AnimatePresence>
         {showDraftModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[200] flex items-center justify-center p-6">
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-border flex flex-col max-h-[80vh]"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="glass-card w-full max-w-sm rounded-[2.5rem] p-8 flex flex-col max-h-[85vh] shadow-[0_32px_64px_rgba(0,0,0,0.3)]"
             >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-black text-text-primary uppercase tracking-tighter">{t.equipes}</h3>
-                <button onClick={() => setShowDraftModal(false)} className="p-2 text-text-secondary">
-                  <X className="w-5 h-5" />
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-text-primary tracking-tight">{t.equipes}</h3>
+                <button onClick={() => setShowDraftModal(false)} className="p-2 text-text-secondary hover:bg-bg-primary rounded-full transition-colors">
+                  <X className="w-6 h-6" />
                 </button>
               </div>
               
-              <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto space-y-6 pr-2 no-scrollbar">
                 {drawnTeams.map((team, idx) => (
-                  <div key={idx} className="bg-bg-primary rounded-2xl p-4 border border-border">
-                    <h4 className="text-[#FF6B35] font-black text-[10px] mb-2 uppercase tracking-widest">
-                      {t.equipe} {String.fromCharCode(65 + idx)}
-                    </h4>
-                    <div className="space-y-1">
+                  <div key={idx} className="bg-bg-secondary/50 rounded-3xl p-5 border border-white/5 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-accent" />
+                      <h4 className="text-accent font-bold text-[10px] uppercase tracking-[0.2em] leading-none">
+                        {t.equipe} {String.fromCharCode(65 + idx)}
+                      </h4>
+                    </div>
+                    <div className="space-y-2">
                       {team.map(player => (
-                        <div key={player.id} className="text-xs font-bold text-text-primary flex justify-between items-center py-1 border-b border-border/50 last:border-0">
-                          <span>{player.name}</span>
-                          <span className="text-text-secondary bg-bg-card px-2 py-0.5 rounded-md text-[10px]">#{player.number}</span>
+                        <div key={player.id} className="text-sm font-semibold text-text-primary flex justify-between items-center py-2.5 border-b border-white/5 last:border-0">
+                          <span className="tracking-tight">{player.name}</span>
+                          <span className="text-[11px] font-bold text-text-secondary bg-bg-card/50 px-2.5 py-1 rounded-lg border border-white/5 tabular-nums shadow-sm">#{player.number}</span>
                         </div>
                       ))}
                     </div>
@@ -1173,19 +1220,19 @@ export default function App() {
                 ))}
               </div>
 
-              <div className="flex gap-3 mt-6">
-                <button 
-                  onClick={() => setShowDraftModal(false)}
-                  className="flex-1 py-3 rounded-xl text-xs font-bold bg-bg-primary text-text-secondary"
-                >
-                  {t.fechar || 'Fechar'}
-                </button>
+              <div className="flex flex-col gap-3 mt-8">
                 <button 
                   onClick={shareTeams}
-                  className="flex-1 py-3 rounded-xl text-xs font-bold bg-[#FF6B35] text-white shadow-lg shadow-[#FF6B35]/20 flex items-center justify-center gap-2"
+                  className="w-full h-14 bg-accent text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-accent/20 active:scale-95 transition-all"
                 >
-                  <Share2 className="w-4 h-4" />
+                  <Share2 className="w-5 h-5" />
                   {t.compartilhar}
+                </button>
+                <button 
+                  onClick={() => setShowDraftModal(false)}
+                  className="w-full h-14 bg-bg-secondary text-text-primary rounded-2xl font-bold active:scale-95 transition-all text-sm"
+                >
+                  {t.fechar || 'Fechar'}
                 </button>
               </div>
             </motion.div>
@@ -1235,46 +1282,46 @@ function TimeEditor({ currentTime, onSave, onClose, t }: any) {
 
   return (
     <motion.div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <motion.div 
-        className="w-full max-w-xs bg-bg-card rounded-2xl p-6 shadow-2xl flex flex-col gap-6"
+        className="w-full max-w-xs glass-card rounded-[2.5rem] p-8 flex flex-col gap-8 shadow-2xl"
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
       >
         <div className="flex justify-between items-center">
-          <h3 className="font-black text-text-primary uppercase tracking-widest text-sm">{t.editarTempo}</h3>
-          <button onClick={onClose} className="p-2 text-text-secondary"><X className="w-5 h-5" /></button>
+          <h3 className="text-xl font-bold text-text-primary tracking-tight">{t.editarTempo}</h3>
+          <button onClick={onClose} className="p-2 text-text-secondary hover:bg-bg-primary rounded-full transition-colors"><X className="w-6 h-6" /></button>
         </div>
 
-        <div className="flex justify-center items-center gap-4">
+        <div className="flex justify-center items-center gap-6">
           {/* Minutes */}
-          <div className="flex flex-col items-center gap-2">
-            <button onClick={() => adjustMins(1)} className="p-3 bg-bg-primary rounded-xl text-[#FF6B35]"><Plus className="w-6 h-6" /></button>
-            <div className="text-4xl font-black font-mono w-16 text-center text-text-primary">{mins.toString().padStart(2, '0')}</div>
-            <button onClick={() => adjustMins(-1)} className="p-3 bg-bg-primary rounded-xl text-[#FF6B35]"><Minus className="w-6 h-6" /></button>
-            <span className="text-[8px] font-bold text-text-secondary uppercase">{t.minutos}</span>
+          <div className="flex flex-col items-center gap-3">
+            <button onClick={() => adjustMins(1)} className="p-4 bg-bg-secondary rounded-2xl text-accent active:scale-90 transition-transform"><Plus className="w-6 h-6 font-bold" /></button>
+            <div className="text-5xl font-bold font-mono text-text-primary tracking-tighter text-digit">{mins.toString().padStart(2, '0')}</div>
+            <button onClick={() => adjustMins(-1)} className="p-4 bg-bg-secondary rounded-2xl text-accent active:scale-90 transition-transform"><Minus className="w-6 h-6 font-bold" /></button>
+            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{t.minutos}</span>
           </div>
 
-          <div className="text-4xl font-black text-text-secondary pb-8">:</div>
+          <div className="text-4xl font-light text-text-secondary pb-12">:</div>
 
           {/* Seconds */}
-          <div className="flex flex-col items-center gap-2">
-            <button onClick={() => adjustSecs(1)} className="p-3 bg-bg-primary rounded-xl text-[#FF6B35]"><Plus className="w-6 h-6" /></button>
-            <div className="text-4xl font-black font-mono w-16 text-center text-text-primary">{secs.toString().padStart(2, '0')}</div>
-            <button onClick={() => adjustSecs(-1)} className="p-3 bg-bg-primary rounded-xl text-[#FF6B35]"><Minus className="w-6 h-6" /></button>
-            <span className="text-[8px] font-bold text-text-secondary uppercase">{t.segundos}</span>
+          <div className="flex flex-col items-center gap-3">
+            <button onClick={() => adjustSecs(1)} className="p-4 bg-bg-secondary rounded-2xl text-accent active:scale-90 transition-transform"><Plus className="w-6 h-6 font-bold" /></button>
+            <div className="text-5xl font-bold font-mono text-text-primary tracking-tighter text-digit">{secs.toString().padStart(2, '0')}</div>
+            <button onClick={() => adjustSecs(-1)} className="p-4 bg-bg-secondary rounded-2xl text-accent active:scale-90 transition-transform"><Minus className="w-6 h-6 font-bold" /></button>
+            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{t.segundos}</span>
           </div>
         </div>
 
         <button 
-          className="w-full h-14 bg-[#FF6B35] text-white rounded-xl font-black flex items-center justify-center gap-2 shadow-lg"
+          className="w-full h-16 bg-accent text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow-xl shadow-accent/20 active:scale-[0.98] transition-all"
           onClick={() => onSave(mins * 60 + secs)}
         >
-          <Check className="w-5 h-5" />
+          <Check className="w-6 h-6" />
           {t.salvarTempo}
         </button>
       </motion.div>
@@ -1294,14 +1341,16 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
   const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
 
   return (
-    <div className="bg-bg-card rounded-xl p-3 shadow-[0_20px_50px_rgba(0,0,0,0.25)] flex flex-col items-center justify-between transition-colors duration-300 min-h-[240px] sm:min-h-[280px] md:min-h-[320px]">
-      <div className="text-center w-full">
-        <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest">{label}</span>
+    <div className="glass-card rounded-[2rem] p-5 flex flex-col items-center justify-between transition-all duration-300 min-h-[260px] sm:min-h-[300px] md:min-h-[340px] group relative overflow-hidden">
+      <div className="absolute inset-0 bg-accent/3 opacity-0 group-hover:opacity-100 transition-opacity" />
+      
+      <div className="text-center w-full relative">
+        <span className="text-[10px] font-bold text-accent uppercase tracking-widest leading-none">{label}</span>
         {isEditing ? (
-          <div className="flex gap-1 mt-1">
+          <div className="flex gap-1 mt-2">
             <input 
               autoFocus
-              className="w-full text-center bg-bg-primary rounded-md text-sm font-black text-text-primary py-1 outline-[#FF6B35] uppercase"
+              className="w-full text-center bg-bg-primary rounded-xl text-sm font-bold text-text-primary py-2 px-3 outline-accent uppercase"
               value={tempName}
               onChange={(e) => setTempName(e.target.value)}
               onBlur={handleSave}
@@ -1310,7 +1359,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
           </div>
         ) : (
           <h2 
-            className="text-base font-black text-text-primary leading-tight truncate w-full text-center cursor-pointer hover:text-[#FF6B35] transition-colors uppercase"
+            className="text-lg font-bold text-text-primary leading-tight truncate w-full mt-1 text-center cursor-pointer hover:text-accent transition-colors uppercase tracking-tight"
             onClick={() => setIsEditing(true)}
           >
             {name}
@@ -1318,16 +1367,16 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
         )}
       </div>
 
-      <div className="flex items-baseline gap-1">
-        <span className="text-5xl font-bold text-text-primary font-display">{score}</span>
-        <span className="text-[9px] font-bold text-text-secondary">{t.pts}</span>
+      <div className="flex items-baseline gap-1 relative">
+        <span className="text-6xl font-bold text-text-primary font-display tracking-tighter text-digit">{score}</span>
+        <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{t.pts}</span>
       </div>
 
-      <div className="flex flex-col gap-2 w-full">
+      <div className="flex flex-col gap-3 w-full relative">
         {isFibaNba ? (
           <>
             <motion.button 
-              className="w-full h-10 rounded-lg bg-[#FF6B35] text-white font-black text-lg flex items-center justify-center shadow-lg"
+              className="w-full h-9 rounded-xl bg-accent text-white font-bold text-sm flex items-center justify-center shadow-lg shadow-accent/20"
               whileTap={{ scale: 0.95 }}
               onClick={onAdd2}
             >
@@ -1335,14 +1384,14 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
             </motion.button>
             <div className="flex gap-2">
               <motion.button 
-                className="flex-1 h-10 rounded-lg bg-[#FFF0EB] dark:bg-[#FF6B35]/10 text-[#FF6B35] font-black text-lg flex items-center justify-center shadow-sm"
+                className="flex-1 h-10 rounded-xl bg-bg-secondary text-accent font-bold text-sm flex items-center justify-center border border-accent/10 active:bg-accent/10"
                 whileTap={{ scale: 0.95 }}
                 onClick={onAdd1}
               >
                 +1
               </motion.button>
               <motion.button 
-                className="flex-1 h-10 rounded-lg bg-[#FFF0EB] dark:bg-[#FF6B35]/10 text-[#FF6B35] font-black text-lg flex items-center justify-center shadow-sm"
+                className="flex-1 h-10 rounded-xl bg-bg-secondary text-accent font-bold text-sm flex items-center justify-center border border-accent/10 active:bg-accent/10"
                 whileTap={{ scale: 0.95 }}
                 onClick={onAdd3}
               >
@@ -1351,16 +1400,16 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
             </div>
           </>
         ) : (
-          <div className="flex gap-2 w-full">
+          <div className="flex gap-3 w-full">
             <motion.button 
-              className="flex-1 h-10 rounded-lg bg-[#FFF0EB] dark:bg-[#FF6B35]/10 text-[#FF6B35] font-black text-lg flex items-center justify-center shadow-sm"
+              className="flex-1 h-14 rounded-2xl bg-bg-secondary text-accent font-bold text-lg flex items-center justify-center border border-accent/10 active:bg-accent/10"
               whileTap={{ scale: 0.95 }}
               onClick={onAdd1}
             >
               +1
             </motion.button>
             <motion.button 
-              className="flex-1 h-10 rounded-lg bg-[#FF6B35] text-white font-black text-lg flex items-center justify-center shadow-lg"
+              className="flex-1 h-14 rounded-2xl bg-accent text-white font-bold text-lg flex items-center justify-center shadow-lg shadow-accent/20"
               whileTap={{ scale: 0.95 }}
               onClick={onAdd2}
             >
@@ -1379,37 +1428,38 @@ function FoulCard({ label, fouls, onAddFoul, t, gameMode }: any) {
   const isBonus = fouls >= bonusThreshold;
   
   return (
-    <div 
-      className={`rounded-xl p-2 shadow-[0_20px_50px_rgba(0,0,0,0.25)] flex flex-col items-start gap-1 cursor-pointer transition-colors duration-300 min-h-[70px] sm:min-h-[80px] ${isBonus ? 'bg-[#FF6B35]' : 'bg-bg-card'}`}
+    <motion.div 
+      className={`rounded-3xl p-4 flex flex-col items-start gap-2 cursor-pointer transition-all duration-300 min-h-[82px] group overflow-hidden relative ${isBonus ? 'bg-accent shadow-lg shadow-accent/20 text-white border-transparent' : 'glass-card border border-white/10 hover:scale-[1.02]'}`}
       onClick={onAddFoul}
+      whileTap={{ scale: 0.98 }}
     >
-      <div className="w-full flex justify-between items-center min-h-[1.5rem]">
-        <span className={`text-[8px] font-bold uppercase tracking-widest leading-tight text-left ${isBonus ? 'text-white/80' : 'text-text-secondary'}`}>{label}</span>
-        <span className={`text-lg font-black font-mono ${isBonus ? 'text-white' : 'text-text-primary'}`}>{fouls.toString().padStart(2, '0')}</span>
+      {!isBonus && <div className="absolute inset-0 bg-accent/3 opacity-0 group-hover:opacity-100 transition-opacity" />}
+      
+      <div className="w-full flex justify-between items-start relative gap-2">
+        <span className={`text-[11px] font-black uppercase tracking-tight leading-[1.1] whitespace-pre-line ${isBonus ? 'text-white' : 'text-text-primary'}`}>{label}</span>
+        <span className="text-3xl font-black font-mono text-digit leading-none pt-1">{fouls.toString().padStart(2, '0')}</span>
       </div>
-      <div className="flex gap-1.5 justify-start w-full">
+      <div className="flex gap-2 justify-start w-full relative mt-auto">
         {[...Array(bonusThreshold)].map((_, i) => (
           <div 
             key={i} 
-            className={`w-2 h-2 rounded-full transition-colors ${i < fouls ? (isBonus ? 'bg-white' : 'bg-[#FF6B35]') : (isBonus ? 'bg-white/20' : 'bg-border')}`} 
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${i < fouls ? (isBonus ? 'bg-white scale-110 shadow-sm' : 'bg-accent scale-110 shadow-sm shadow-accent/20') : (isBonus ? 'bg-white/20' : 'bg-bg-secondary')}`} 
           />
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function ControlButton({ icon, label, onClick, disabled }: any) {
   return (
     <motion.button
-      className={`flex flex-col items-center justify-center gap-1 h-14 rounded-xl bg-bg-card shadow-[0_20px_50px_rgba(0,0,0,0.25)] border border-border transition-colors duration-300 ${disabled ? 'opacity-50 grayscale' : ''}`}
-      whileHover={disabled ? {} : { scale: 1.05, backgroundColor: 'var(--color-bg-primary)' }}
-      whileTap={disabled ? {} : { scale: 0.95 }}
-      onClick={onClick}
+      className={`flex flex-col items-center justify-center gap-2 h-20 rounded-[2rem] glass-card border border-white/10 transition-all duration-300 ${disabled ? 'opacity-30 grayscale cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95 shadow-lg shadow-black/5'}`}
+      onClick={disabled ? undefined : onClick}
       disabled={disabled}
     >
-      <div className="text-text-secondary">{icon}</div>
-      <span className="text-[7px] font-bold text-text-secondary uppercase tracking-widest">{label}</span>
+      <div className="text-accent">{React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6' })}</div>
+      <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{label}</span>
     </motion.button>
   );
 }
@@ -1419,16 +1469,16 @@ function PlayerBadge({ player, isSelected, onClick }: any) {
     <motion.button
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className={`px-3 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 border shadow-sm ${
+      className={`px-4 py-2 rounded-2xl text-[11px] font-bold transition-all flex items-center gap-3 border shadow-sm ${
         isSelected 
-          ? 'bg-[#FF6B35] text-white border-[#FF6B35] ring-2 ring-[#FF6B35]/20' 
-          : 'bg-bg-card text-text-primary border-border hover:border-[#FF6B35]/50'
+          ? 'bg-accent text-white border-accent shadow-accent/20' 
+          : 'bg-bg-secondary text-text-primary border-transparent hover:border-accent/30'
       }`}
     >
-      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] ${isSelected ? 'bg-white text-[#FF6B35]' : 'bg-bg-primary text-text-secondary'}`}>
+      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono ${isSelected ? 'bg-white/20 text-white' : 'bg-bg-card shadow-sm text-accent'}`}>
         {player.number || '00'}
       </span>
-      <span className="truncate max-w-[80px]">{player.name}</span>
+      <span className="tracking-tight">{player.name}</span>
     </motion.button>
   );
 }
@@ -1439,83 +1489,84 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
                      player.stats.ft.made;
   
   return (
-    <div className="bg-bg-card rounded-xl p-4 shadow-xl space-y-4 border border-border/30">
-      <div className="flex justify-between items-center border-b border-border pb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#FF6B35] rounded-full flex items-center justify-center text-white font-black text-xs">
+    <div className="glass-card rounded-[2.5rem] p-6 space-y-6 shadow-[0_20px_40px_rgba(0,0,0,0.1)]">
+      <div className="flex justify-between items-center border-b border-border/40 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-accent/20">
             {player.number || '00'}
           </div>
-          <div className="flex flex-col">
-            <span className="font-black text-text-primary leading-none">{player.name}</span>
-            <span className="text-[9px] font-bold text-[#FF6B35] uppercase tracking-widest mt-1">Total: {totalPoints} {t.pts}</span>
+          <div>
+            <h3 className="font-bold text-text-primary tracking-tight leading-none text-lg uppercase">{player.name}</h3>
+            <p className="text-[10px] font-bold text-accent uppercase tracking-widest mt-1.5 flex items-center gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-accent" /> Total: {totalPoints} {t.pts}
+            </p>
           </div>
         </div>
-        <button onClick={() => removePlayer(player.id)} className="text-text-secondary hover:text-red-500 transition-colors">
-          <X className="w-4 h-4" />
+        <button 
+          onClick={() => removePlayer(player.id)} 
+          className="w-10 h-10 flex items-center justify-center text-text-secondary hover:text-red-500 bg-bg-secondary rounded-full transition-all"
+        >
+          <X className="w-5 h-5" />
         </button>
       </div>
 
-      <div className="overflow-x-auto -mx-2 px-2">
-        <table className="w-full text-[9px] sm:text-[10px] text-left min-w-[280px]">
-          <thead>
-            <tr className="text-text-secondary uppercase tracking-widest border-b border-border">
-              <th className="pb-2 font-black">{t.categoria}</th>
-              <th className="pb-2 text-center font-black">{t.acertou}</th>
-              <th className="pb-2 text-center font-black">{t.errou}</th>
-              <th className="pb-2 text-right font-black">{t.aproveitamento}</th>
-            </tr>
-          </thead>
-          <tbody className="text-text-primary font-bold">
-            {[
-              { key: 'pts2' as const, label: gameMode === '3x3' ? '1 Ponto' : t.pts2 },
-              { key: 'pts3' as const, label: gameMode === '3x3' ? '2 Pontos' : t.pts3 },
-              { key: 'ft' as const, label: t.lanceLivre },
-            ].map(cat => {
-              const total = player.stats[cat.key].made + player.stats[cat.key].missed;
-              const perc = total > 0 ? ((player.stats[cat.key].made / total) * 100).toFixed(1) : '0.0';
-              return (
-                <tr key={cat.key} className="border-b border-border/50">
-                  <td className="py-2 sm:py-3">{cat.label}</td>
-                  <td className="py-2 sm:py-3">
-                    <div className="flex items-center justify-center gap-1 sm:gap-2">
-                      <button 
-                        onClick={() => updatePlayerStat(player.id, cat.key, 'made', -1)}
-                        className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-bg-primary rounded-md text-text-secondary active:scale-90 transition-transform"
-                      >
-                        <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </button>
-                      <span className="min-w-[14px] sm:min-w-[16px] text-center text-xs">{player.stats[cat.key].made}</span>
-                      <button 
-                        onClick={() => updatePlayerStat(player.id, cat.key, 'made', 1)}
-                        className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-[#FF6B35] text-white rounded-md active:scale-90 transition-transform shadow-sm"
-                      >
-                        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="py-2 sm:py-3">
-                    <div className="flex items-center justify-center gap-1 sm:gap-2">
-                      <button 
-                        onClick={() => updatePlayerStat(player.id, cat.key, 'missed', -1)}
-                        className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-bg-primary rounded-md text-text-secondary active:scale-90 transition-transform"
-                      >
-                        <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </button>
-                      <span className="min-w-[14px] sm:min-w-[16px] text-center text-xs">{player.stats[cat.key].missed}</span>
-                      <button 
-                        onClick={() => updatePlayerStat(player.id, cat.key, 'missed', 1)}
-                        className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-text-secondary text-white rounded-md active:scale-90 transition-transform shadow-sm"
-                      >
-                        <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="py-2 sm:py-3 text-right font-mono text-[#FF6B35] text-[10px] sm:text-xs">{perc}%</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="space-y-4">
+        {[
+          { key: 'pts2' as const, label: gameMode === '3x3' ? '1 Ponto' : t.pts2 },
+          { key: 'pts3' as const, label: gameMode === '3x3' ? '2 Pontos' : t.pts3 },
+          { key: 'ft' as const, label: t.lanceLivre },
+        ].map(cat => {
+          const total = player.stats[cat.key].made + player.stats[cat.key].missed;
+          const perc = total > 0 ? ((player.stats[cat.key].made / total) * 100).toFixed(1) : '0.0';
+          return (
+            <div key={cat.key} className="bg-bg-secondary/40 rounded-3xl p-4 flex flex-col gap-3">
+              <div className="flex justify-between items-center px-1">
+                <span className="text-xs font-bold text-text-primary tracking-tight">{cat.label}</span>
+                <span className="text-[10px] font-bold text-accent font-mono">{perc}%</span>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="flex-1 flex flex-col gap-1.5">
+                  <span className="text-[9px] font-bold text-text-secondary uppercase tracking-widest px-1">{t.acertou}</span>
+                  <div className="flex items-center justify-between bg-bg-secondary rounded-2xl p-1 shadow-inner">
+                    <button 
+                      onClick={() => updatePlayerStat(player.id, cat.key, 'made', -1)}
+                      className="w-8 h-8 flex items-center justify-center text-text-secondary active:scale-90 transition-transform"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <span className="font-bold text-sm tabular-nums">{player.stats[cat.key].made}</span>
+                    <button 
+                      onClick={() => updatePlayerStat(player.id, cat.key, 'made', 1)}
+                      className="w-8 h-8 flex items-center justify-center text-accent active:scale-90 transition-transform"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 flex flex-col gap-1.5">
+                  <span className="text-[9px] font-bold text-text-secondary uppercase tracking-widest px-1">{t.errou}</span>
+                  <div className="flex items-center justify-between bg-bg-secondary rounded-2xl p-1 shadow-inner">
+                    <button 
+                      onClick={() => updatePlayerStat(player.id, cat.key, 'missed', -1)}
+                      className="w-8 h-8 flex items-center justify-center text-text-secondary active:scale-90 transition-transform"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <span className="font-bold text-sm tabular-nums">{player.stats[cat.key].missed}</span>
+                    <button 
+                      onClick={() => updatePlayerStat(player.id, cat.key, 'missed', 1)}
+                      className="w-8 h-8 flex items-center justify-center text-text-secondary active:scale-90 transition-transform"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -1524,15 +1575,23 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
 function NavButton({ active, onClick, icon, label }: any) {
   return (
     <button 
-      className="flex-1 flex flex-col items-center gap-0.5 group"
+      className="flex-1 flex flex-col items-center gap-1 group py-3 relative"
       onClick={onClick}
     >
-      <div className={`p-1.5 rounded-xl transition-all ${active ? 'bg-[#FFF0EB] dark:bg-[#FF6B35]/20 text-[#FF6B35]' : 'text-text-secondary group-hover:text-[#FF6B35]'}`}>
-        {icon}
+      <div className={`p-2 rounded-2xl transition-all duration-300 relative z-10 ${active ? 'text-accent scale-110' : 'text-text-secondary group-hover:text-accent/70'}`}>
+        {React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6' })}
       </div>
-      <span className={`text-[8px] font-black tracking-widest ${active ? 'text-[#FF6B35]' : 'text-text-secondary'}`}>
+      <span className={`text-[10px] font-bold tracking-tight z-10 ${active ? 'text-text-primary' : 'text-text-secondary'}`}>
         {label}
       </span>
+      {active && (
+        <motion.div 
+          layoutId="nav-glow"
+          className="absolute inset-x-2 inset-y-1 bg-accent/10 rounded-[1.5rem] -z-0"
+          initial={false}
+          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+        />
+      )}
     </button>
   );
 }
@@ -1540,34 +1599,33 @@ function NavButton({ active, onClick, icon, label }: any) {
 function ConfirmModal({ title, message, onConfirm, onCancel, t }: any) {
   return (
     <motion.div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <motion.div 
-        className="w-full max-w-xs bg-bg-card rounded-2xl p-6 shadow-2xl flex flex-col gap-6"
+        className="w-full max-w-xs glass-card rounded-[2.5rem] p-8 flex flex-col gap-8 shadow-2xl"
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
       >
-        <div className="text-center space-y-2">
-          <h3 className="font-black text-text-primary uppercase tracking-widest text-sm">{title}</h3>
-          <p className="text-xs font-bold text-text-secondary">{message}</p>
+        <div className="text-center space-y-4">
+          <h3 className="text-2xl font-bold text-text-primary tracking-tight leading-tight">{title}</h3>
+          <p className="text-sm font-medium text-text-secondary leading-relaxed">{message}</p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3">
           <button 
-            className="flex-1 h-12 bg-bg-primary text-text-secondary rounded-xl font-black text-xs uppercase"
-            onClick={onCancel}
-          >
-            {t.desfazer /* Using Undo label as Cancel if no better one exists, but let's just use a generic one or check translations */}
-            {/* Actually, let's just use "Voltar" or similar, but I'll check translations for a better one */}
-          </button>
-          <button 
-            className="flex-1 h-12 bg-[#FF6B35] text-white rounded-xl font-black text-xs uppercase shadow-lg"
+            className="w-full h-14 bg-accent text-white rounded-2xl font-bold text-lg shadow-xl shadow-accent/20 active:scale-95 transition-all"
             onClick={onConfirm}
           >
             {t.reiniciar}
+          </button>
+          <button 
+            className="w-full h-14 bg-bg-secondary text-text-primary rounded-2xl font-bold text-lg active:scale-95 transition-all"
+            onClick={onCancel}
+          >
+            {t.fechar || 'Cancelar'}
           </button>
         </div>
       </motion.div>

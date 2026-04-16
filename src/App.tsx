@@ -889,8 +889,8 @@ export default function App() {
             </div>
 
             {/* Add Player Form */}
-            <div className="glass-card rounded-3xl p-4 flex flex-col gap-4">
-              <div className="flex gap-3 items-center">
+            <div className="glass-card rounded-3xl p-3.5 flex flex-col gap-4">
+              <div className="flex gap-2 items-center">
                 <div className="flex-1 flex gap-2">
                   <input 
                     type="text"
@@ -901,17 +901,17 @@ export default function App() {
                   />
                   <input 
                     type="text"
-                    placeholder={t.numeroJogador}
-                    className="w-16 bg-bg-secondary rounded-2xl px-2 py-3 text-sm font-bold text-center text-text-primary outline-accent placeholder:text-text-secondary/50"
+                    placeholder={t.numeroJogador || 'Nº'}
+                    className="w-14 bg-bg-secondary rounded-2xl px-1 py-3 text-sm font-bold text-center text-text-primary outline-accent placeholder:text-text-secondary/50"
                     value={newPlayerNumber}
                     onChange={(e) => setNewPlayerNumber(e.target.value)}
                   />
                 </div>
                 <motion.button
-                  className="w-12 h-12 bg-accent text-white rounded-2xl shadow-lg shadow-accent/20 flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+                  className="w-11 h-11 bg-accent text-white rounded-2xl shadow-lg shadow-accent/20 flex items-center justify-center shrink-0 active:scale-95 transition-transform"
                   onClick={addPlayer}
                 >
-                  <Plus className="w-6 h-6" />
+                  <Plus className="w-5 h-5" />
                 </motion.button>
               </div>
             </div>

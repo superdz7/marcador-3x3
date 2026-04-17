@@ -888,7 +888,7 @@ export default function App() {
               />
               
               <motion.button
-                className="text-[10px] sm:text-[11px] font-bold text-accent-blue uppercase tracking-widest bg-accent-blue/10 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full border border-accent-blue/20 active:scale-95 transition-all flex items-center gap-1.5 sm:gap-2.5"
+                className="text-[10px] sm:text-[11px] font-bold text-accent-blue uppercase tracking-widest bg-accent-blue/10 px-4 sm:px-6 h-12 rounded-full border border-accent-blue/20 active:scale-95 transition-all flex items-center gap-1.5 sm:gap-2.5"
                 onClick={() => setIsRunning(!isRunning)}
               >
                 {isRunning ? (
@@ -1534,7 +1534,7 @@ function FoulCard({ label, fouls, onAddFoul, t, gameMode, colorClass }: any) {
 function ControlButton({ icon, label, onClick, disabled }: any) {
   return (
     <motion.button
-      className={`text-[10px] sm:text-[11px] font-bold text-text-secondary uppercase tracking-widest bg-white/5 px-2.5 sm:px-4 py-2 rounded-full border border-white/10 active:scale-95 transition-all flex items-center gap-1.5 sm:gap-2 ${disabled ? 'opacity-20 grayscale cursor-not-allowed' : 'hover:bg-white/10 opacity-70 hover:opacity-100'}`}
+      className={`text-[10px] sm:text-[11px] font-bold text-text-secondary uppercase tracking-widest bg-white/5 px-2.5 sm:px-4 h-12 rounded-full border border-white/10 active:scale-95 transition-all flex items-center gap-1.5 sm:gap-2 ${disabled ? 'opacity-20 grayscale cursor-not-allowed' : 'hover:bg-white/10 opacity-70 hover:opacity-100'}`}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
     >

@@ -64,6 +64,10 @@
     text-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
   }
 
+  .text-glow-red {
+    text-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+  }
+
   .shadow-glow-blue {
     box-shadow: 0 0 20px rgba(34, 211, 238, 0.15);
   }

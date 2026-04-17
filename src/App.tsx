@@ -774,8 +774,8 @@ export default function App() {
           </motion.div>
         </div>
         
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
-          <span className="text-[10px] font-bold text-accent-blue bg-accent-blue/10 border border-accent-blue/20 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+        <div className="absolute left-1/2 -translate-x-1/2 top-3 flex items-center">
+          <span className="text-[10px] font-bold text-accent-blue bg-accent-blue/10 border border-accent-blue/20 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
             {MODES[gameMode].label}
           </span>
         </div>
@@ -813,7 +813,7 @@ export default function App() {
                 }}
               >
                 <span className="text-[11px] font-bold text-text-secondary uppercase tracking-[0.15em] absolute top-5">{t.tempoJogo}</span>
-                <div className="text-6xl sm:text-7xl font-mono text-accent-blue text-glow-blue tracking-tighter mt-4 leading-none text-digit">
+                <div className="text-6xl sm:text-7xl font-mono text-accent-blue text-glow-blue tracking-tighter mt-10 leading-none text-digit">
                   {formatTime(gameTime)}
                 </div>
               </motion.div>
@@ -824,7 +824,7 @@ export default function App() {
                 onClick={() => setShotClock(gameMode === '3x3' ? 12 : 24)}
               >
                 <span className="text-[11px] font-bold text-text-secondary uppercase tracking-[0.15em] absolute top-5 leading-none z-10">{t.posse}</span>
-                <div className={`text-5xl font-mono ${shotClock <= 3 && shotClock > 0 ? 'text-red-500 animate-pulse' : 'text-accent-green text-glow-green'} mt-4 text-digit relative z-10 leading-none`}>
+                <div className={`text-5xl font-mono ${shotClock <= 3 && shotClock > 0 ? 'text-red-500 animate-pulse' : 'text-accent-green text-glow-green'} mt-10 text-digit relative z-10 leading-none`}>
                   {shotClock.toString().padStart(2, '0')}
                 </div>
               </motion.div>
@@ -1503,27 +1503,30 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
 function FoulCard({ label, fouls, onAddFoul, t, gameMode, colorClass }: any) {
   const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
   const bonusThreshold = isFibaNba ? 5 : 7;
-  const dotActiveColor = colorClass === 'home' ? 'bg-accent-blue' : 'bg-accent-green';
-  const labelColorFull = colorClass === 'home' ? 'text-accent-blue/80' : 'text-accent-green/80';
+  const isCritical = fouls >= 7;
+  const dotActiveColor = isCritical ? 'bg-red-500' : (colorClass === 'home' ? 'bg-accent-blue' : 'bg-accent-green');
+  const labelColorFull = isCritical ? 'text-red-500/80' : (colorClass === 'home' ? 'text-accent-blue/80' : 'text-accent-green/80');
   
   return (
     <motion.div 
-      className={`glass-card p-4 flex items-center justify-between cursor-pointer active:scale-95 transition-transform h-full`}
+      className={`glass-card p-4 flex items-center justify-between cursor-pointer active:scale-95 transition-all duration-500 h-full ${
+        isCritical ? 'bg-red-500/10 border-red-500/30' : ''
+      }`}
       onClick={onAddFoul}
       whileTap={{ scale: 0.98 }}
     >
       <div className="flex flex-col gap-3">
-        <span className={`text-[10px] font-bold uppercase tracking-widest ${labelColorFull} leading-tight whitespace-pre-line`}>{label}</span>
+        <span className={`text-[10px] font-bold uppercase tracking-widest ${labelColorFull} leading-tight whitespace-pre-line transition-colors`}>{label}</span>
         <div className="flex gap-1.5">
           {[...Array(bonusThreshold)].map((_, i) => (
             <div 
               key={i} 
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${i < fouls ? `${dotActiveColor} shadow-sm opacity-100` : 'bg-slate-800 opacity-50'}`} 
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${i < fouls ? `${dotActiveColor} shadow-sm opacity-100 ${isCritical ? 'shadow-red-500/50' : ''}` : 'bg-slate-800 opacity-50'}`} 
             />
           ))}
         </div>
       </div>
-      <span className="text-4xl font-mono text-text-primary text-digit">{fouls}</span>
+      <span className={`text-4xl font-mono transition-colors ${isCritical ? 'text-red-500 text-glow-red' : 'text-text-primary'} text-digit`}>{fouls}</span>
     </motion.div>
   );
 }

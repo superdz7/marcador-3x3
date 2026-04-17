@@ -27,7 +27,8 @@ import {
   Languages,
   Palette,
   MonitorSmartphone,
-  Users
+  Users,
+  Menu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -328,6 +329,7 @@ export default function App() {
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [newPlayerNumber, setNewPlayerNumber] = useState('');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const hasStarted = useRef(false);
   const buzzerPlayedRef = useRef(false);
   const [shotClockBuzzerPlayed, setShotClockBuzzerPlayed] = useState(false);
@@ -756,8 +758,8 @@ export default function App() {
       </AnimatePresence>
 
       {/* Header - Glassmorphism */}
-      <header className="w-full sticky top-0 z-40 px-6 py-6 pb-2 flex items-center justify-between border-b border-border/10">
-        <div className="flex flex-col">
+      <header className="w-full sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b border-border/10 bg-bg-primary/50 backdrop-blur-xl relative">
+        <div className="flex flex-col items-start">
           <h1 className="text-2xl font-display font-bold tracking-[0.1em] text-text-primary leading-tight uppercase">Basquete</h1>
           <motion.div 
             key={activeTab}
@@ -765,17 +767,27 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             className="text-[10px] font-bold text-accent-blue uppercase tracking-[0.3em] mt-0.5 opacity-70"
           >
-            {activeTab === 'placar' ? 'Placar' : 
+            {activeTab === 'placar' ? t.placar : 
              activeTab === 'estatisticas' ? t.estatisticas : 
              activeTab === 'historico' ? t.historicoPartida : 
              t.configuracoes}
           </motion.div>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="text-[12px] font-bold text-accent-blue bg-accent-blue/10 px-4 py-1.5 rounded-xl border border-accent-blue/20 uppercase tracking-[0.1em] leading-none">
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
+          <span className="text-[10px] font-bold text-accent-blue bg-accent-blue/10 border border-accent-blue/20 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
             {MODES[gameMode].label}
-          </div>
+          </span>
+        </div>
+        
+        <div className="flex items-center">
+          <motion.button 
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsMenuOpen(true)}
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-secondary border border-border text-text-primary active:scale-95 transition-all"
+          >
+            <Menu className="w-6 h-6" />
+          </motion.button>
         </div>
       </header>
 
@@ -787,7 +799,7 @@ export default function App() {
           {/* Column 1: Placar (Always visible on lg if activeTab is placar/stats) */}
           <div className={`flex-1 flex flex-col gap-4 lg:pb-12 ${activeTab === 'placar' ? 'flex' : (activeTab === 'estatisticas' ? 'hidden lg:flex' : 'hidden')}`}>
             {/* Timer & Shot Clock Row */}
-            <div className="flex gap-4 h-32 sm:h-40 shrinks-0">
+            <div className="flex gap-4 h-28 sm:h-36 shrink-0">
               {/* Game Timer */}
               <motion.div 
                 className={`flex-[3] glass-card flex flex-col items-center justify-center relative overflow-hidden group ${hasStarted.current ? 'cursor-default' : 'cursor-pointer'}`}
@@ -1280,33 +1292,74 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Bottom Navigation - Fixed at bottom */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl glass-nav rounded-t-xl px-4 py-2 flex justify-between items-center z-50">
-        <NavButton 
-          active={activeTab === 'placar'} 
-          onClick={() => setActiveTab('placar')}
-          icon={<LayoutGrid className="w-5 h-5" />}
-          label={t.placar}
-        />
-        <NavButton 
-          active={activeTab === 'estatisticas'} 
-          onClick={() => setActiveTab('estatisticas')}
-          icon={<BarChart3 className="w-5 h-5" />}
-          label={t.estatisticas}
-        />
-        <NavButton 
-          active={activeTab === 'historico'} 
-          onClick={() => setActiveTab('historico')}
-          icon={<History className="w-5 h-5" />}
-          label={t.historico}
-        />
-        <NavButton 
-          active={activeTab === 'opcoes'} 
-          onClick={() => setActiveTab('opcoes')}
-          icon={<Settings className="w-5 h-5" />}
-          label={t.opcoes}
-        />
-      </nav>
+      {/* Side Menu Drawer */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <div className="fixed inset-0 z-[200]">
+            {/* Overlay */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMenuOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            
+            {/* Menu Content */}
+            <motion.div 
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="absolute right-0 top-0 bottom-0 w-[80%] max-w-[300px] bg-[#020617] border-l border-white/5 shadow-2xl p-6 flex flex-col"
+            >
+              <div className="flex items-center justify-between mb-10 pt-4 px-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-8 bg-accent rounded-full" />
+                  <h2 className="text-xl font-display font-bold text-white tracking-[0.2em] uppercase leading-none">Menu</h2>
+                </div>
+                <button 
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-10 h-10 flex items-center justify-center text-text-secondary hover:bg-white/5 rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="flex-1 flex flex-col gap-3">
+                <MenuItem 
+                  icon={<LayoutGrid className="w-5 h-5" />} 
+                  label={t.placar} 
+                  active={activeTab === 'placar'} 
+                  onClick={() => { setActiveTab('placar'); setIsMenuOpen(false); }} 
+                />
+                <MenuItem 
+                  icon={<BarChart3 className="w-5 h-5" />} 
+                  label={t.estatisticas} 
+                  active={activeTab === 'estatisticas'} 
+                  onClick={() => { setActiveTab('estatisticas'); setIsMenuOpen(false); }} 
+                />
+                <MenuItem 
+                  icon={<History className="w-5 h-5" />} 
+                  label={t.historicoPartida} 
+                  active={activeTab === 'historico'} 
+                  onClick={() => { setActiveTab('historico'); setIsMenuOpen(false); }} 
+                />
+                <MenuItem 
+                  icon={<Settings className="w-5 h-5" />} 
+                  label={t.configuracoes} 
+                  active={activeTab === 'opcoes'} 
+                  onClick={() => { setActiveTab('opcoes'); setIsMenuOpen(false); }} 
+                />
+              </div>
+
+              <div className="mt-auto pb-10 text-center opacity-30">
+                  <p className="text-[9px] font-bold text-text-secondary uppercase tracking-[0.4em]">desenvolvido por superdz7</p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1386,8 +1439,8 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
   const labelColor = colorClass === 'home' ? 'text-accent-blue/80' : 'text-accent-green/80';
 
   return (
-    <div className={`glass-card p-6 flex flex-col items-center gap-4 transition-all duration-300 h-full`}>
-      <div className="flex flex-col items-center gap-2 w-full">
+    <div className={`glass-card p-4 flex flex-col items-center gap-3 transition-all duration-300 h-full`}>
+      <div className="flex flex-col items-center gap-1.5 w-full">
         <span className={`text-[11px] font-bold uppercase tracking-[0.2em] ${labelColor}`}>{label}</span>
         {isEditing ? (
           <div className="flex gap-1 w-full">
@@ -1412,8 +1465,8 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
         )}
       </div>
 
-      <div className="flex-1 flex items-center justify-center">
-        <span className={`text-[5.5rem] font-mono leading-none text-digit ${textColor} ${glowClass}`}>
+      <div className="flex-1 flex items-center justify-center py-1">
+        <span className={`text-7xl sm:text-[5rem] font-mono leading-none text-digit ${textColor} ${glowClass}`}>
           {score.toString().padStart(2, '0')}
         </span>
       </div>
@@ -1455,7 +1508,7 @@ function FoulCard({ label, fouls, onAddFoul, t, gameMode, colorClass }: any) {
   
   return (
     <motion.div 
-      className={`glass-card p-6 flex items-center justify-between cursor-pointer active:scale-95 transition-transform h-full`}
+      className={`glass-card p-4 flex items-center justify-between cursor-pointer active:scale-95 transition-transform h-full`}
       onClick={onAddFoul}
       whileTap={{ scale: 0.98 }}
     >
@@ -1649,6 +1702,29 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
         </div>
       </div>
     </div>
+  );
+}
+
+function MenuItem({ icon, label, active, onClick }: any) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      className={`group flex items-center gap-4 p-5 rounded-2xl transition-all border ${
+        active 
+          ? 'bg-accent/10 border-accent/20 text-accent' 
+          : 'bg-white/[0.02] border-white/5 text-text-secondary hover:bg-white/5 hover:text-text-primary'
+      }`}
+    >
+      <div className={`${active ? 'text-accent' : 'text-text-secondary group-hover:text-accent transition-colors'}`}>{icon}</div>
+      <span className="text-xs tracking-[0.2em] font-bold uppercase">{label}</span>
+      {active && (
+        <motion.div 
+          layoutId="active-dot"
+          className="ml-auto w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(249,115,22,0.6)]" 
+        />
+      )}
+    </motion.button>
   );
 }
 

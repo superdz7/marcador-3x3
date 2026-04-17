@@ -28,18 +28,18 @@
 @layer base {
   * {
     @apply border-border;
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
   }
 
   body {
     @apply bg-bg-deep text-text-primary antialiased transition-colors duration-300;
     background-image: radial-gradient(circle at 50% -20%, #0f172a 0%, #020617 100%);
     -webkit-tap-highlight-color: transparent;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  body::-webkit-scrollbar {
-    display: none;
   }
 }
 

@@ -748,11 +748,14 @@ export default function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="w-full max-w-2xl flex-1 flex flex-col gap-4 p-4 pb-32">
-        {activeTab === 'placar' ? (
-          <>
+      <main className={`w-full flex-1 flex flex-col p-4 transition-all duration-300 mx-auto ${['placar', 'estatisticas'].includes(activeTab) ? 'max-w-7xl' : 'max-w-2xl'}`}>
+        {/* Layout Grid: Desktop 2 Columns / Mobile 1 Column */}
+        <div className={`flex-1 flex flex-col lg:grid lg:gap-8 lg:min-h-0 ${['placar', 'estatisticas'].includes(activeTab) ? 'lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px]' : 'lg:max-w-2xl mx-auto w-full'}`}>
+          
+          {/* Column 1: Placar (Always visible on lg if activeTab is placar/stats) */}
+          <div className={`flex-1 flex flex-col gap-4 lg:pb-12 ${activeTab === 'placar' ? 'flex' : (activeTab === 'estatisticas' ? 'hidden lg:flex' : 'hidden')}`}>
             {/* Timer & Shot Clock Row */}
-            <div className="flex gap-4 h-28 sm:h-36 md:h-44 shrink-0">
+            <div className="flex gap-4 h-24 sm:h-32 lg:h-28 shrink-0">
               {/* Game Timer */}
               <motion.div 
                 className={`flex-[3] glass-card rounded-3xl flex flex-col items-center justify-center relative overflow-hidden group ${hasStarted.current ? 'cursor-default' : 'cursor-pointer'}`}
@@ -766,8 +769,8 @@ export default function App() {
                 }}
               >
                 <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest absolute top-4">{t.tempoJogo}</span>
-                <div className="text-[16cqw] sm:text-[18cqw] md:text-[5rem] font-bold tracking-tighter text-text-primary mt-2 font-display leading-none text-digit">
+                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest absolute top-3">{t.tempoJogo}</span>
+                <div className="text-[14cqw] sm:text-[18cqw] md:text-[4.5rem] font-bold tracking-tighter text-text-primary mt-2 font-display leading-none text-digit">
                   {formatTime(gameTime)}
                 </div>
               </motion.div>
@@ -840,7 +843,7 @@ export default function App() {
             </div>
 
             {/* Controls Row */}
-            <div className="grid grid-cols-3 gap-4 mt-2 shrink-0">
+            <div className="grid grid-cols-3 gap-4 mt-auto lg:mt-2 shrink-0 pb-32 lg:pb-0">
               <ControlButton 
                 icon={<Undo2 className="w-5 h-5" />} 
                 label={t.desfazer} 
@@ -862,9 +865,10 @@ export default function App() {
                 onClick={() => setShowResetConfirm(true)}
               />
             </div>
-          </>
-        ) : activeTab === 'estatisticas' ? (
-          <div className="flex-1 flex flex-col gap-6 overflow-y-auto no-scrollbar pb-10">
+          </div>
+
+          {/* Column 2: Estatisticas (Always visible on lg if activeTab is placar/stats) */}
+          <div className={`flex-1 flex flex-col gap-6 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto no-scrollbar pb-32 lg:pb-4 ${activeTab === 'estatisticas' ? 'flex' : (activeTab === 'placar' ? 'hidden lg:flex' : 'hidden')}`}>
             <div className="flex items-center px-2">
               <h2 className="text-lg font-bold text-text-primary tracking-tight">{t.estatisticas}</h2>
               <div className="flex gap-2 ml-auto">
@@ -971,7 +975,9 @@ export default function App() {
               ) : null}
             </div>
           </div>
-        ) : activeTab === 'historico' ? (
+
+          {/* Historico Tab (Standalone) */}
+          {activeTab === 'historico' && (
           <div className="flex-1 flex flex-col gap-6 min-h-0 mb-4 pb-20">
             <div className="flex justify-between items-center px-2">
               <h2 className="text-lg font-bold text-text-primary tracking-tight">{t.historicoPartida}</h2>
@@ -1019,8 +1025,11 @@ export default function App() {
               )}
             </div>
           </div>
-        ) : activeTab === 'opcoes' ? (
-          <div className="flex-1 flex flex-col gap-8 pb-32 overflow-y-auto no-scrollbar">
+          )}
+
+          {/* Opcoes Tab (Standalone) */}
+          {activeTab === 'opcoes' && (
+            <div className="flex-1 flex flex-col gap-8 pb-32 lg:pb-8 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto no-scrollbar">
             <h2 className="text-lg font-bold text-text-primary px-2 tracking-tight">{t.configuracoes}</h2>
             
             <div className="flex flex-col gap-4">
@@ -1165,18 +1174,9 @@ export default function App() {
                 </div>
               </div>
             </div>
-
-            <div className="pt-4 text-right pb-8 opacity-40">
-              <span className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em]">
-                desenvolvido por superdz7
-              </span>
-            </div>
           </div>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-text-secondary">
-            <p className="font-bold">Em breve...</p>
-          </div>
-        )}
+          )}
+        </div>
       </main>
 
       {/* Time Editor Modal */}
@@ -1379,7 +1379,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
   const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
 
   return (
-    <div className="glass-card rounded-[2rem] p-5 flex flex-col items-center justify-between transition-all duration-300 min-h-[260px] sm:min-h-[300px] md:min-h-[340px] group relative overflow-hidden">
+    <div className="glass-card rounded-[2rem] p-4 lg:p-3.5 flex flex-col items-center justify-between transition-all duration-300 min-h-[250px] sm:min-h-[280px] lg:min-h-[240px] xl:min-h-[260px] group relative overflow-hidden">
       <div className="absolute inset-0 bg-accent/3 opacity-0 group-hover:opacity-100 transition-opacity" />
       
       <div className="text-center w-full relative">
@@ -1410,11 +1410,11 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
         <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{t.pts}</span>
       </div>
 
-      <div className="flex flex-col gap-3 w-full relative">
+      <div className="flex flex-col gap-2.5 lg:gap-2 w-full relative">
         {isFibaNba ? (
           <>
             <motion.button 
-              className="w-full h-9 rounded-xl bg-accent text-white font-bold text-sm flex items-center justify-center shadow-lg shadow-accent/20"
+              className="w-full h-8 lg:h-7 rounded-lg bg-accent text-white font-bold text-xs flex items-center justify-center shadow-lg shadow-accent/20"
               whileTap={{ scale: 0.95 }}
               onClick={onAdd2}
             >
@@ -1422,14 +1422,14 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
             </motion.button>
             <div className="flex gap-2">
               <motion.button 
-                className="flex-1 h-10 rounded-xl bg-bg-secondary text-accent font-bold text-sm flex items-center justify-center border border-accent/10 active:bg-accent/10"
+                className="flex-1 h-9 lg:h-8 rounded-lg bg-bg-secondary text-accent font-bold text-xs flex items-center justify-center border border-accent/10 active:bg-accent/10"
                 whileTap={{ scale: 0.95 }}
                 onClick={onAdd1}
               >
                 +1
               </motion.button>
               <motion.button 
-                className="flex-1 h-10 rounded-xl bg-bg-secondary text-accent font-bold text-sm flex items-center justify-center border border-accent/10 active:bg-accent/10"
+                className="flex-1 h-9 lg:h-8 rounded-lg bg-bg-secondary text-accent font-bold text-xs flex items-center justify-center border border-accent/10 active:bg-accent/10"
                 whileTap={{ scale: 0.95 }}
                 onClick={onAdd3}
               >
@@ -1438,16 +1438,16 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
             </div>
           </>
         ) : (
-          <div className="flex gap-3 w-full">
+          <div className="flex gap-2.5 lg:gap-2 w-full">
             <motion.button 
-              className="flex-1 h-14 rounded-2xl bg-bg-secondary text-accent font-bold text-lg flex items-center justify-center border border-accent/10 active:bg-accent/10"
+              className="flex-1 h-12 lg:h-10 rounded-xl bg-bg-secondary text-accent font-bold text-base flex items-center justify-center border border-accent/10 active:bg-accent/10"
               whileTap={{ scale: 0.95 }}
               onClick={onAdd1}
             >
               +1
             </motion.button>
             <motion.button 
-              className="flex-1 h-14 rounded-2xl bg-accent text-white font-bold text-lg flex items-center justify-center shadow-lg shadow-accent/20"
+              className="flex-1 h-12 lg:h-10 rounded-xl bg-accent text-white font-bold text-base flex items-center justify-center shadow-lg shadow-accent/20"
               whileTap={{ scale: 0.95 }}
               onClick={onAdd2}
             >
@@ -1527,28 +1527,28 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
                      player.stats.ft.made;
   
   return (
-    <div className="glass-card rounded-[2.5rem] p-5 space-y-5 shadow-[0_15px_30px_rgba(0,0,0,0.08)]">
-      <div className="flex justify-between items-start pb-4 border-b border-border/20">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-white font-black text-base shadow-[0_4px_12px_rgba(255,149,0,0.3)] shrink-0">
+    <div className="glass-card rounded-[2rem] lg:rounded-[1.5rem] p-4 lg:p-3 space-y-3 lg:space-y-2.5 shadow-[0_15px_30px_rgba(0,0,0,0.08)]">
+      <div className="flex justify-between items-center pb-2.5 border-b border-border/20">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center text-white font-black text-sm shadow-[0_4px_12px_rgba(255,149,0,0.3)] shrink-0">
             {player.number || '00'}
           </div>
           <div className="min-w-0">
-            <h3 className="font-black text-text-primary tracking-tight text-lg uppercase leading-none truncate">{player.name}</h3>
-            <p className="text-[10px] font-black text-accent uppercase tracking-widest mt-1.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent" /> TOTAL: {totalPoints} {t.pts}
+            <h3 className="font-black text-text-primary tracking-tight text-base uppercase leading-none truncate">{player.name}</h3>
+            <p className="text-[9px] font-black text-accent uppercase tracking-widest mt-1 flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-accent" /> TOTAL: {totalPoints} {t.pts}
             </p>
           </div>
         </div>
         <button 
           onClick={() => removePlayer(player.id)} 
-          className="w-9 h-9 flex items-center justify-center text-text-secondary hover:bg-bg-secondary rounded-full transition-all border border-border/10 shrink-0"
+          className="w-8 h-8 flex items-center justify-center text-text-secondary hover:bg-bg-secondary hover:text-red-500 rounded-full transition-all border border-border/10 shrink-0"
         >
-          <X className="w-4 h-4" />
+          <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-3.5 lg:space-y-3">
         {[
           { key: 'pts2' as const, label: gameMode === '3x3' ? '1 Ponto' : t.pts2 },
           { key: 'pts3' as const, label: gameMode === '3x3' ? '2 Pontos' : t.pts3 },
@@ -1563,41 +1563,41 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
                 <span className="text-[10px] font-black text-accent">{perc}%</span>
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <span className="text-[8px] font-black text-text-secondary uppercase tracking-[0.15em] px-1">{t.acertou}</span>
-                  <div className="flex items-center justify-between bg-bg-secondary/50 rounded-2xl p-0.5 border border-border/5">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <span className="text-[7px] font-black text-text-secondary uppercase tracking-[0.1em] px-1">{t.acertou}</span>
+                  <div className="flex items-center justify-between bg-bg-secondary rounded-xl p-0.5 border border-border/10 group/btn">
                     <button 
                       onClick={() => updatePlayerStat(player.id, cat.key, 'made', -1)}
-                      className="w-8 h-8 flex items-center justify-center text-text-secondary active:scale-90 transition-transform opacity-30 hover:opacity-100"
+                      className="w-7 h-7 flex items-center justify-center text-text-secondary hover:text-red-500 active:scale-90 transition-all opacity-70 hover:opacity-100 bg-bg-card border border-border/20 rounded-lg shadow-sm"
                     >
-                      <Minus className="w-3.5 h-3.5" />
+                      <Minus className="w-3 h-3" />
                     </button>
-                    <span className="font-black text-sm tabular-nums text-text-primary">{player.stats[cat.key].made}</span>
+                    <span className="font-black text-xs tabular-nums text-text-primary">{player.stats[cat.key].made}</span>
                     <button 
                       onClick={() => updatePlayerStat(player.id, cat.key, 'made', 1)}
-                      className="w-8 h-8 flex items-center justify-center text-accent active:scale-90 transition-transform"
+                      className="w-7 h-7 flex items-center justify-center text-accent active:scale-90 transition-all bg-accent/10 border border-accent/20 rounded-lg shadow-sm"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <span className="text-[8px] font-black text-text-secondary uppercase tracking-[0.15em] px-1">{t.errou}</span>
-                  <div className="flex items-center justify-between bg-bg-secondary/50 rounded-2xl p-0.5 border border-border/5">
+                <div className="space-y-1">
+                  <span className="text-[7px] font-black text-text-secondary uppercase tracking-[0.1em] px-1">{t.errou}</span>
+                  <div className="flex items-center justify-between bg-bg-secondary rounded-xl p-0.5 border border-border/10 group/btn">
                     <button 
                       onClick={() => updatePlayerStat(player.id, cat.key, 'missed', -1)}
-                      className="w-8 h-8 flex items-center justify-center text-text-secondary active:scale-90 transition-transform opacity-30 hover:opacity-100"
+                      className="w-7 h-7 flex items-center justify-center text-text-secondary hover:text-red-500 active:scale-90 transition-all opacity-70 hover:opacity-100 bg-bg-card border border-border/20 rounded-lg shadow-sm"
                     >
-                      <Minus className="w-3.5 h-3.5" />
+                      <Minus className="w-3 h-3" />
                     </button>
-                    <span className="font-black text-sm tabular-nums text-text-primary">{player.stats[cat.key].missed}</span>
+                    <span className="font-black text-xs tabular-nums text-text-primary">{player.stats[cat.key].missed}</span>
                     <button 
                       onClick={() => updatePlayerStat(player.id, cat.key, 'missed', 1)}
-                      className="w-8 h-8 flex items-center justify-center text-text-secondary active:scale-90 transition-transform"
+                      className="w-7 h-7 flex items-center justify-center text-text-secondary active:scale-90 transition-all bg-bg-card border border-border/20 rounded-lg shadow-sm"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>

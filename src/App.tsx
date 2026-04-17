@@ -301,7 +301,6 @@ export default function App() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [players, setPlayers] = useState<Player[]>([]);
   const [showDraftModal, setShowDraftModal] = useState(false);
-  const [showShareModal, setShowShareModal] = useState<{ text: string; title: string } | null>(null);
   const [drawnTeams, setDrawnTeams] = useState<Player[][]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
@@ -349,11 +348,18 @@ export default function App() {
   };
 
   const handleShare = (text: string, title: string) => {
-    if (navigator.share) {
-      navigator.share({ title, text }).catch(() => setShowShareModal({ text, title }));
-    } else {
-      setShowShareModal({ text, title });
-    }
+    navigator.clipboard.writeText(text).then(() => {
+      setToast({ message: t.copiado, type: 'success' });
+    }).catch(() => {
+      // Fallback if clipboard fails
+      if (navigator.share) {
+        navigator.share({ title, text }).catch(() => {
+          setToast({ message: 'Erro ao compartilhar', type: 'error' });
+        });
+      } else {
+        setToast({ message: 'Erro ao copiar', type: 'error' });
+      }
+    });
   };
 
   const handleUndo = () => {
@@ -985,8 +991,8 @@ export default function App() {
                 className="p-3 bg-accent text-white rounded-2xl shadow-xl shadow-accent/20 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest active:scale-95 transition-transform"
                 onClick={shareHistory}
               >
-                <Share2 className="w-4 h-4" />
-                {t.compartilhar}
+                <Copy className="w-4 h-4" />
+                {t.copiar}
               </motion.button>
             </div>
             <div className="flex-1 glass-card rounded-[2.5rem] p-6 overflow-y-auto no-scrollbar flex flex-col">
@@ -1250,8 +1256,8 @@ export default function App() {
                   onClick={shareTeams}
                   className="w-full h-14 bg-accent text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-accent/20 active:scale-95 transition-all"
                 >
-                  <Share2 className="w-5 h-5" />
-                  {t.compartilhar}
+                  <Copy className="w-5 h-5" />
+                  {t.copiar}
                 </button>
                 <button 
                   onClick={() => setShowDraftModal(false)}
@@ -1262,19 +1268,6 @@ export default function App() {
               </div>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
-
-      {/* Share Modal */}
-      <AnimatePresence>
-        {showShareModal && (
-          <ShareModal 
-            title={showShareModal.title}
-            text={showShareModal.text}
-            onClose={() => setShowShareModal(null)}
-            t={t}
-            setToast={setToast}
-          />
         )}
       </AnimatePresence>
 
@@ -1631,77 +1624,6 @@ function NavButton({ active, onClick, icon, label }: any) {
         />
       )}
     </button>
-  );
-}
-
-function ShareModal({ title, text, onClose, t, setToast }: any) {
-  const encodedText = encodeURIComponent(text);
-  const whatsappUrl = `https://wa.me/?text=${encodedText}`;
-  const telegramUrl = `https://t.me/share/url?url=&text=${encodedText}`;
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(text);
-    setToast({ message: t.copiado, type: 'success' });
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/40 backdrop-blur-sm">
-      <motion.div 
-        className="w-full sm:max-w-xs glass-card rounded-t-3xl sm:rounded-[2.5rem] p-8 flex flex-col gap-6 shadow-2xl"
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-      >
-        <div className="flex justify-between items-center">
-          <h3 className="text-xl font-bold text-text-primary tracking-tight">{t.compartilharVia}</h3>
-          <button onClick={onClose} className="p-2 text-text-secondary hover:bg-bg-primary rounded-full transition-colors"><X className="w-5 h-5" /></button>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3">
-          <a 
-            href={whatsappUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-4 p-4 rounded-2xl bg-[#25D366]/10 text-[#25D366] font-bold hover:bg-[#25D366]/20 transition-all border border-[#25D366]/20 active:scale-95"
-          >
-            <div className="bg-[#25D366] text-white p-2 rounded-xl">
-              <MessageCircle className="w-5 h-5" />
-            </div>
-            <span>{t.whatsapp}</span>
-          </a>
-          
-          <a 
-            href={telegramUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-4 p-4 rounded-2xl bg-[#0088cc]/10 text-[#0088cc] font-bold hover:bg-[#0088cc]/20 transition-all border border-[#0088cc]/20 active:scale-95"
-          >
-            <div className="bg-[#0088cc] text-white p-2 rounded-xl">
-              <Send className="w-5 h-5" />
-            </div>
-            <span>{t.telegram}</span>
-          </a>
-
-          <button 
-            onClick={copyToClipboard}
-            className="flex items-center gap-4 p-4 rounded-2xl bg-bg-secondary text-text-primary font-bold hover:bg-bg-card transition-all border border-border active:scale-95"
-          >
-            <div className="bg-text-secondary text-white p-2 rounded-xl">
-              <Copy className="w-5 h-5" />
-            </div>
-            <span>{t.copiar}</span>
-          </button>
-        </div>
-
-        <button 
-          onClick={onClose}
-          className="w-full h-12 bg-bg-secondary text-text-primary rounded-xl font-bold active:scale-95 transition-all text-sm mt-2"
-        >
-          {t.fechar || 'Fechar'}
-        </button>
-      </motion.div>
-    </div>
   );
 }
 

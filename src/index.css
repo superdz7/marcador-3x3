@@ -1,29 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bebas Neue", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 
-  --color-bg-primary: #f2f2f7;
-  --color-bg-secondary: #ffffff;
-  --color-bg-card: #ffffff;
-  --color-text-primary: #000000;
-  --color-text-secondary: #8e8e93;
-  --color-accent: #ff9500;
-  --color-accent-hover: #ffcc00;
-  --color-border: #d1d1d6;
+  /* App Palette - Inspired by Image */
+  --color-bg-deep: #020617;
+  --color-bg-card: rgba(15, 23, 42, 0.4);
+  --color-accent-blue: #22d3ee;
+  --color-accent-green: #22c55e;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #64748b;
+  --color-border: rgba(30, 41, 59, 0.3);
+  
+  /* Legacy mapping for components using generic 'accent' */
+  --color-accent: #22d3ee;
+  --color-accent-hover: #0891b2;
 }
 
 .dark {
-  --color-bg-primary: #000000;
-  --color-bg-secondary: #1c1c1e;
-  --color-bg-card: #1c1c1e;
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #8e8e93;
-  --color-accent: #ff9f0a;
-  --color-accent-hover: #ffcc00;
-  --color-border: #38383a;
+  --color-bg-primary: #020617;
+  --color-bg-secondary: #0f172a;
 }
 
 @layer base {
@@ -32,36 +31,45 @@
   }
 
   body {
-    @apply bg-bg-primary text-text-primary antialiased transition-colors duration-500;
+    @apply bg-bg-deep text-text-primary antialiased transition-colors duration-300;
+    background-image: radial-gradient(circle at 50% -20%, #0f172a 0%, #020617 100%);
     -webkit-tap-highlight-color: transparent;
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   body::-webkit-scrollbar {
     display: none;
   }
 }
 
 @layer utilities {
-  .glass {
-    @apply bg-bg-secondary/80 backdrop-blur-2xl border-b border-border/40;
-  }
-  
   .glass-card {
-    @apply bg-bg-card/70 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.15)] transition-all duration-300;
+    @apply bg-bg-card backdrop-blur-md border border-border rounded-[40px] shadow-2xl;
+  }
+
+  .glass-button {
+    @apply bg-slate-900/20 border border-slate-800/50 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 hover:bg-slate-900/40;
   }
 
   .glass-nav {
-    @apply bg-bg-secondary/70 backdrop-blur-2xl border-t border-border/40 shadow-[0_-8px_30px_rgb(0,0,0,0.04)];
+    @apply bg-bg-deep/80 backdrop-blur-3xl border-t border-slate-800/50 shadow-[0_-8px_32px_rgba(0,0,0,0.5)];
   }
-  
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
+
+  .text-glow-blue {
+    text-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
   }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+
+  .text-glow-green {
+    text-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+  }
+
+  .shadow-glow-blue {
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.15);
+  }
+
+  .shadow-glow-green {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
   }
 
   .text-digit {

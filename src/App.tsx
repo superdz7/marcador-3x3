@@ -57,9 +57,13 @@ interface Player {
   name: string;
   number: string;
   stats: {
+    ft: { made: number; missed: number };
     pts2: { made: number; missed: number };
     pts3: { made: number; missed: number };
-    ft: { made: number; missed: number };
+    assists: number;
+    rebounds: number;
+    steals: number;
+    blocks: number;
   };
 }
 
@@ -73,10 +77,10 @@ const MODES = {
 
 const TRANSLATIONS: any = {
   pt: {
-    placar: 'PLACAR',
-    historico: 'HISTÓRICO',
+    placar: 'Placar',
+    historico: 'Histórico',
     estatisticas: 'Estatísticas',
-    opcoes: 'OPÇÕES',
+    opcoes: 'Opções',
     casa: 'CASA',
     visitante: 'VISITANTE',
     faltasDaCasa: 'Faltas da\nCasa',
@@ -104,6 +108,8 @@ const TRANSLATIONS: any = {
     modoJogo: 'Modo de Jogo',
     telaSempreLigada: 'Manter tela ligada',
     confirmarReiniciar: 'Deseja reiniciar o placar?',
+    iniciar: 'Iniciar',
+    pausar: 'Pausar',
     inicioPartida: 'Início da Partida',
     fimJogo: 'Fim de Jogo',
     faltaCasa: 'Falta da equipe da Casa',
@@ -128,11 +134,15 @@ const TRANSLATIONS: any = {
     pts3: '3 Pontos',
     lanceLivre: 'Lance Livre',
     remover: 'Remover',
+    asst: 'Assistências',
+    reb: 'Rebotes',
+    stl: 'Roubos',
+    blk: 'Tocos',
     sorteio: 'SORTEIO',
     equipes: 'Equipes',
     compartilharEquipes: 'Compartilhar Equipes',
     equipe: 'Equipe',
-    jogadoresInsuficientes: 'Jogadores insuficientes. Cadastre-os na aba de estatísticas.',
+    jogadoresInsuficientes: 'Jogadores insuficientes!',
     fechar: 'Fechar',
     limparSorteio: 'Limpar Sorteio',
     tempoNaoEditavel: 'O tempo só pode ser alterado antes do início do jogo.',
@@ -169,6 +179,8 @@ const TRANSLATIONS: any = {
     modoJogo: 'Game Mode',
     telaSempreLigada: 'Keep screen on',
     confirmarReiniciar: 'Do you want to reset the scoreboard?',
+    iniciar: 'Start',
+    pausar: 'Pause',
     inicioPartida: 'Game Started',
     fimJogo: 'Game Over',
     faltaCasa: 'Home Team Foul',
@@ -193,11 +205,15 @@ const TRANSLATIONS: any = {
     pts3: '3 Points',
     lanceLivre: 'Free Throw',
     remover: 'Remove',
+    asst: 'Assists',
+    reb: 'Rebounds',
+    stl: 'Steals',
+    blk: 'Blocks',
     sorteio: 'DRAFT',
     equipes: 'Teams',
     compartilharEquipes: 'Share Teams',
     equipe: 'Team',
-    jogadoresInsuficientes: 'Insufficient players. Register them in the stats tab.',
+    jogadoresInsuficientes: 'Insufficient players!',
     fechar: 'Close',
     limparSorteio: 'Clear Draft',
     tempoNaoEditavel: 'Time can only be changed before the game starts.',
@@ -205,7 +221,7 @@ const TRANSLATIONS: any = {
   es: {
     placar: 'MARCADOR',
     historico: 'HISTORIAL',
-    estatisticas: 'Estadísticas',
+    estatisticas: 'ESTADÍSTICAS',
     opcoes: 'OPCIONES',
     casa: 'LOCAL',
     visitante: 'VISITANTE',
@@ -232,6 +248,8 @@ const TRANSLATIONS: any = {
     modoJogo: 'Modo de Juego',
     telaSempreLigada: 'Mantener pantalla encendida',
     confirmarReiniciar: '¿Desea reiniciar el marcador?',
+    iniciar: 'Iniciar',
+    pausar: 'Pausar',
     inicioPartida: 'Inicio del Partido',
     fimJogo: 'Fin del Juego',
     faltaCasa: 'Falta del equipo Local',
@@ -256,11 +274,15 @@ const TRANSLATIONS: any = {
     pts3: '3 Puntos',
     lanceLivre: 'Tiro Libre',
     remover: 'Eliminar',
+    asst: 'Asistencias',
+    reb: 'Rebotes',
+    stl: 'Robos',
+    blk: 'Tapones',
     sorteio: 'SORTEO',
     equipes: 'Equipos',
     compartilharEquipes: 'Compartir Equipos',
     equipe: 'Equipo',
-    jogadoresInsuficientes: 'Jugadores insuficientes. Regístrelos en la pestaña de estadísticas.',
+    jogadoresInsuficientes: '¡Jugadores insuficientes!',
     fechar: 'Cerrar',
     limparSorteio: 'Limpiar Sorteo',
     tempoNaoEditavel: 'El tiempo solo se puede cambiar antes de que comience el juego.',
@@ -525,19 +547,23 @@ export default function App() {
     setIsRunning(false);
   };
 
-  const updatePlayerStat = (playerId: string, category: keyof Player['stats'], type: 'made' | 'missed', amount: number) => {
+  const updatePlayerStat = (playerId: string, category: keyof Player['stats'], typeOrValue: 'made' | 'missed' | number, amount?: number) => {
     setPlayers(prev => prev.map(p => {
       if (p.id === playerId) {
-        return {
-          ...p,
-          stats: {
-            ...p.stats,
-            [category]: {
-              ...p.stats[category],
-              [type]: Math.max(0, p.stats[category][type] + amount)
-            }
-          }
-        };
+        const stats = { ...p.stats };
+        if (typeof stats[category] === 'object' && typeof typeOrValue === 'string' && amount !== undefined) {
+          // It's a made/missed stat
+          const cat = category as 'ft' | 'pts2' | 'pts3';
+          stats[cat] = {
+            ...stats[cat],
+            [typeOrValue]: Math.max(0, stats[cat][typeOrValue] + amount)
+          };
+        } else if (typeof stats[category] === 'number' && typeof typeOrValue === 'number') {
+          // It's a flat counter
+          const cat = category as 'assists' | 'rebounds' | 'steals' | 'blocks';
+          stats[cat] = Math.max(0, stats[cat] + typeOrValue);
+        }
+        return { ...p, stats };
       }
       return p;
     }));
@@ -553,6 +579,10 @@ export default function App() {
         pts2: { made: 0, missed: 0 },
         pts3: { made: 0, missed: 0 },
         ft: { made: 0, missed: 0 },
+        assists: 0,
+        rebounds: 0,
+        steals: 0,
+        blocks: 0,
       }
     };
     setPlayers(prev => [...prev, player]);
@@ -709,7 +739,7 @@ export default function App() {
   }, [shotClock, isRunning, shotClockSoundEnabled, shotClockBuzzerPlayed]);
 
   return (
-    <div className="min-h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center select-none transition-colors duration-500 overflow-hidden">
+    <div className="min-h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center select-none transition-colors duration-300 overflow-hidden mesh-gradient">
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
@@ -717,7 +747,7 @@ export default function App() {
             initial={{ opacity: 0, y: -20, x: '-50%' }}
             animate={{ opacity: 1, y: 24, x: '-50%' }}
             exit={{ opacity: 0, y: -20, x: '-50%' }}
-            className="fixed left-1/2 z-[100] px-5 py-2.5 rounded-full glass-card shadow-2xl font-semibold text-xs flex items-center gap-2 border border-white/20"
+            className="fixed left-1/2 z-[100] px-5 py-2.5 rounded-full glass-card font-semibold text-xs flex items-center gap-2"
           >
             {toast.type === 'error' ? <X className="w-4 h-4 text-red-500" /> : <Check className="w-4 h-4 text-green-500" />}
             <span className="text-text-primary">{toast.message}</span>
@@ -726,30 +756,26 @@ export default function App() {
       </AnimatePresence>
 
       {/* Header - Glassmorphism */}
-      <header className="w-full sticky top-0 z-40 glass px-6 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-accent/20 rounded-xl flex items-center justify-center shadow-lg overflow-hidden border border-accent/20">
-            <img 
-              src="https://img.icons8.com/color/96/basketball.png" 
-              alt="Basketball"
-              className="w-7 h-7 object-contain"
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }}
-            />
-            <div className="hidden">
-              <Dribbble className="w-6 h-6 text-accent" />
-            </div>
-          </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-text-primary leading-tight">Basquete</h1>
-          </div>
+      <header className="w-full sticky top-0 z-40 px-6 py-6 pb-2 flex items-center justify-between border-b border-border/10">
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-display font-bold tracking-[0.1em] text-text-primary leading-tight uppercase">Basquete</h1>
+          <motion.div 
+            key={activeTab}
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-[10px] font-bold text-accent-blue uppercase tracking-[0.3em] mt-0.5 opacity-70"
+          >
+            {activeTab === 'placar' ? 'Placar' : 
+             activeTab === 'estatisticas' ? t.estatisticas : 
+             activeTab === 'historico' ? t.historicoPartida : 
+             t.configuracoes}
+          </motion.div>
         </div>
         
-        <div className="text-[10px] font-bold text-accent bg-accent/10 px-3 py-1 rounded-full border border-accent/20 uppercase tracking-widest shadow-sm">
-          {MODES[gameMode].label}
+        <div className="flex items-center gap-4">
+          <div className="text-[12px] font-bold text-accent-blue bg-accent-blue/10 px-4 py-1.5 rounded-xl border border-accent-blue/20 uppercase tracking-[0.1em] leading-none">
+            {MODES[gameMode].label}
+          </div>
         </div>
       </header>
 
@@ -761,10 +787,10 @@ export default function App() {
           {/* Column 1: Placar (Always visible on lg if activeTab is placar/stats) */}
           <div className={`flex-1 flex flex-col gap-4 lg:pb-12 ${activeTab === 'placar' ? 'flex' : (activeTab === 'estatisticas' ? 'hidden lg:flex' : 'hidden')}`}>
             {/* Timer & Shot Clock Row */}
-            <div className="flex gap-4 h-24 sm:h-32 lg:h-28 shrink-0">
+            <div className="flex gap-4 h-32 sm:h-40 shrinks-0">
               {/* Game Timer */}
               <motion.div 
-                className={`flex-[3] glass-card rounded-3xl flex flex-col items-center justify-center relative overflow-hidden group ${hasStarted.current ? 'cursor-default' : 'cursor-pointer'}`}
+                className={`flex-[3] glass-card flex flex-col items-center justify-center relative overflow-hidden group ${hasStarted.current ? 'cursor-default' : 'cursor-pointer'}`}
                 whileTap={hasStarted.current ? {} : { scale: 0.98 }}
                 onClick={() => {
                   if (hasStarted.current) {
@@ -774,34 +800,22 @@ export default function App() {
                   }
                 }}
               >
-                <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest absolute top-3">{t.tempoJogo}</span>
-                <div className="text-[14cqw] sm:text-[18cqw] md:text-[4.5rem] font-bold tracking-tighter text-text-primary mt-2 font-display leading-none text-digit">
+                <span className="text-[11px] font-bold text-text-secondary uppercase tracking-[0.15em] absolute top-5">{t.tempoJogo}</span>
+                <div className="text-6xl sm:text-7xl font-mono text-accent-blue text-glow-blue tracking-tighter mt-4 leading-none text-digit">
                   {formatTime(gameTime)}
                 </div>
               </motion.div>
 
               {/* Shot Clock */}
-              <div className="flex-1 flex flex-col gap-2">
-                <motion.div 
-                  className="flex-1 glass-card rounded-2xl flex flex-col items-center justify-center relative cursor-pointer active:scale-95 transition-transform"
-                  onClick={() => setShotClock(12)}
-                >
-                  <span className="text-[8px] font-bold text-accent uppercase tracking-widest absolute top-2.5 leading-none">{t.posse}</span>
-                  <div className={`text-3xl font-black text-accent mt-2 font-mono text-digit ${shotClock <= 3 && shotClock > 0 ? 'animate-pulse' : ''}`}>
-                    {shotClock.toString().padStart(2, '0')}
-                  </div>
-                </motion.div>
-                
-                {(gameMode === 'fiba' || gameMode === 'nba') && (
-                  <motion.button
-                    className="h-8 glass-card rounded-xl text-accent font-black text-[10px] flex items-center justify-center active:scale-95 transition-transform"
-                    onClick={() => setShotClock(24)}
-                  >
-                    24s
-                  </motion.button>
-                )}
-              </div>
+              <motion.div 
+                className="flex-[1.2] glass-card flex flex-col items-center justify-center relative cursor-pointer active:scale-95 transition-transform overflow-hidden"
+                onClick={() => setShotClock(gameMode === '3x3' ? 12 : 24)}
+              >
+                <span className="text-[11px] font-bold text-text-secondary uppercase tracking-[0.15em] absolute top-5 leading-none z-10">{t.posse}</span>
+                <div className={`text-5xl font-mono ${shotClock <= 3 && shotClock > 0 ? 'text-red-500 animate-pulse' : 'text-accent-green text-glow-green'} mt-4 text-digit relative z-10 leading-none`}>
+                  {shotClock.toString().padStart(2, '0')}
+                </div>
+              </motion.div>
             </div>
 
             {/* Teams Row */}
@@ -816,6 +830,7 @@ export default function App() {
                 onAdd3={() => updateScore('home', 3)}
                 t={t}
                 gameMode={gameMode}
+                colorClass="home"
               />
               <TeamCard 
                 label={t.visitante}
@@ -827,6 +842,7 @@ export default function App() {
                 onAdd3={() => updateScore('visitor', 3)}
                 t={t}
                 gameMode={gameMode}
+                colorClass="visitor"
               />
             </div>
 
@@ -838,6 +854,7 @@ export default function App() {
                 onAddFoul={() => updateFouls('home')}
                 t={t}
                 gameMode={gameMode}
+                colorClass="home"
               />
               <FoulCard 
                 label={t.faltasDoVisitante}
@@ -845,28 +862,38 @@ export default function App() {
                 onAddFoul={() => updateFouls('visitor')}
                 t={t}
                 gameMode={gameMode}
+                colorClass="visitor"
               />
             </div>
 
             {/* Controls Row */}
-            <div className="grid grid-cols-3 gap-4 mt-auto lg:mt-2 shrink-0 pb-32 lg:pb-0">
+            <div className="flex items-center justify-center gap-2 sm:gap-6 mt-10 lg:mt-16 shrink-0 pb-32 lg:pb-0 h-20 px-2 sm:px-4">
               <ControlButton 
-                icon={<Undo2 className="w-5 h-5" />} 
+                icon={<Undo2 />} 
                 label={t.desfazer} 
                 onClick={handleUndo}
                 disabled={history.length === 0}
               />
               
               <motion.button
-                className={`h-12 rounded-xl flex items-center justify-center shadow-2xl transition-all duration-300 ${isRunning ? 'bg-text-primary text-bg-primary scale-[1.02]' : 'bg-accent text-white shadow-accent/30'}`}
-                whileTap={{ scale: 0.95 }}
+                className="text-[10px] sm:text-[11px] font-bold text-accent-blue uppercase tracking-widest bg-accent-blue/10 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full border border-accent-blue/20 active:scale-95 transition-all flex items-center gap-1.5 sm:gap-2.5"
                 onClick={() => setIsRunning(!isRunning)}
               >
-                {isRunning ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
+                {isRunning ? (
+                  <>
+                    <Pause className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-accent-blue fill-accent-blue" />
+                    <span>{t.pausar}</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-accent-blue fill-accent-blue" />
+                    <span>{t.iniciar}</span>
+                  </>
+                )}
               </motion.button>
 
               <ControlButton 
-                icon={<RotateCcw className="w-5 h-5" />} 
+                icon={<RotateCcw />} 
                 label={t.reiniciar} 
                 onClick={() => setShowResetConfirm(true)}
               />
@@ -875,8 +902,7 @@ export default function App() {
 
           {/* Column 2: Estatisticas (Always visible on lg if activeTab is placar/stats) */}
           <div className={`flex-1 flex flex-col gap-6 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto no-scrollbar pb-32 lg:pb-4 ${activeTab === 'estatisticas' ? 'flex' : (activeTab === 'placar' ? 'hidden lg:flex' : 'hidden')}`}>
-            <div className="flex items-center px-2">
-              <h2 className="text-lg font-bold text-text-primary tracking-tight">{t.estatisticas}</h2>
+            <div className="flex items-center px-1">
               <div className="flex gap-2 ml-auto">
                 <motion.button 
                   onClick={handleDraft}
@@ -899,27 +925,27 @@ export default function App() {
             </div>
 
             {/* Add Player Form */}
-            <div className="glass-card rounded-2xl p-3 flex flex-col gap-3 mx-1">
+            <div className="glass-card rounded-2xl p-4 flex flex-col gap-3 mx-1">
               <div className="flex gap-2 items-center">
                 <input 
                   type="text"
                   placeholder={t.nomeJogador}
-                  className="flex-1 min-w-0 bg-bg-secondary rounded-xl px-3 py-2 text-sm font-semibold text-text-primary outline-accent placeholder:text-text-secondary/50"
+                  className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-semibold text-text-primary outline-accent placeholder:text-text-secondary/40"
                   value={newPlayerName}
                   onChange={(e) => setNewPlayerName(e.target.value)}
                 />
                 <input 
                   type="text"
                   placeholder={t.numeroJogador || 'Nº'}
-                  className="w-12 bg-bg-secondary rounded-xl px-1 py-2 text-sm font-bold text-center text-text-primary outline-accent placeholder:text-text-secondary/50"
+                  className="w-14 bg-white/5 border border-white/10 rounded-xl px-1 py-3 text-sm font-black text-center text-text-primary outline-accent placeholder:text-text-secondary/40"
                   value={newPlayerNumber}
                   onChange={(e) => setNewPlayerNumber(e.target.value)}
                 />
                 <motion.button
-                  className="w-10 h-10 bg-accent text-white rounded-xl shadow-lg shadow-accent/20 flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+                  className="w-12 h-12 bg-accent text-white rounded-xl shadow-[0_4px_16px_rgba(249,115,22,0.4)] flex items-center justify-center shrink-0 active:scale-95 transition-transform"
                   onClick={addPlayer}
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-6 h-6" />
                 </motion.button>
               </div>
             </div>
@@ -972,8 +998,8 @@ export default function App() {
                   removePlayer={removePlayer} 
                 />
               ) : players.length > 0 ? (
-                <div className="h-48 glass-card rounded-[2.5rem] flex flex-col items-center justify-center text-text-secondary text-sm font-medium border border-dashed border-border/50 gap-4">
-                  <div className="w-12 h-12 bg-bg-secondary rounded-full flex items-center justify-center">
+                <div className="h-48 glass-card flex flex-col items-center justify-center text-text-secondary text-sm font-medium border-dashed border-white/20 gap-4">
+                  <div className="w-12 h-12 bg-bg-secondary rounded-full flex items-center justify-center border border-border">
                     <Dribbble className="w-6 h-6 opacity-30 animate-pulse text-accent" />
                   </div>
                   <p className="tracking-tight">Selecione um jogador acima</p>
@@ -985,8 +1011,7 @@ export default function App() {
           {/* Historico Tab (Standalone) */}
           {activeTab === 'historico' && (
           <div className="flex-1 flex flex-col gap-6 min-h-0 mb-4 pb-20">
-            <div className="flex justify-between items-center px-2">
-              <h2 className="text-lg font-bold text-text-primary tracking-tight">{t.historicoPartida}</h2>
+            <div className="flex justify-end items-center px-1">
               <motion.button
                 className="p-3 bg-accent text-white rounded-2xl shadow-xl shadow-accent/20 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest active:scale-95 transition-transform"
                 onClick={shareHistory}
@@ -995,7 +1020,7 @@ export default function App() {
                 {t.copiar}
               </motion.button>
             </div>
-            <div className="flex-1 glass-card rounded-[2.5rem] p-6 overflow-y-auto no-scrollbar flex flex-col">
+            <div className="flex-1 glass-card p-6 overflow-y-auto no-scrollbar flex flex-col">
               {history.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-text-secondary gap-4 opacity-40">
                   <div className="w-16 h-16 bg-bg-secondary rounded-full flex items-center justify-center">
@@ -1036,22 +1061,21 @@ export default function App() {
           {/* Opcoes Tab (Standalone) */}
           {activeTab === 'opcoes' && (
             <div className="flex-1 flex flex-col gap-8 pb-32 lg:pb-8 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto no-scrollbar">
-            <h2 className="text-lg font-bold text-text-primary px-2 tracking-tight">{t.configuracoes}</h2>
             
             <div className="flex flex-col gap-4">
               {/* Group 1: General */}
-              <div className="glass-card rounded-[2rem] overflow-hidden">
+              <div className="glass-card overflow-hidden">
                 {/* Language Selection */}
-                <div className="p-5 border-b border-border/40">
+                <div className="p-6 border-b border-white/5">
                   <label className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
                     <Languages className="w-3.5 h-3.5 text-accent" /> {t.idioma}
                   </label>
-                  <div className="flex gap-2 bg-bg-secondary p-1 rounded-2xl">
+                  <div className="flex gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
                     {(['pt', 'en', 'es'] as const).map((lang) => (
                       <button
                         key={lang}
                         onClick={() => setLanguage(lang)}
-                        className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${language === lang ? 'bg-bg-card shadow-sm text-accent' : 'text-text-secondary hover:text-text-primary'}`}
+                        className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${language === lang ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'text-text-secondary hover:text-text-primary'}`}
                       >
                         {lang.toUpperCase()}
                       </button>
@@ -1059,33 +1083,12 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Theme Selection */}
-                <div className="p-5 border-b border-border/40">
-                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
-                    <Palette className="w-3.5 h-3.5 text-accent" /> {t.tema}
-                  </label>
-                  <div className="flex gap-2 bg-bg-secondary p-1 rounded-2xl">
-                    <button
-                      onClick={() => setTheme('light')}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${theme === 'light' ? 'bg-bg-card shadow-sm text-accent' : 'text-text-secondary hover:text-text-primary'}`}
-                    >
-                      {t.claro}
-                    </button>
-                    <button
-                      onClick={() => setTheme('dark')}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${theme === 'dark' ? 'bg-bg-card shadow-sm text-accent' : 'text-text-secondary hover:text-text-primary'}`}
-                    >
-                      {t.escuro}
-                    </button>
-                  </div>
-                </div>
-
                 {/* Game Mode Selection */}
-                <div className="p-5">
+                <div className="p-6">
                   <label className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
                     <Trophy className="w-3.5 h-3.5 text-accent" /> {t.modoJogo}
                   </label>
-                  <div className="flex gap-2 bg-bg-secondary p-1 rounded-2xl">
+                  <div className="flex gap-2 bg-bg-card p-1 rounded-xl border border-border">
                     {(Object.keys(MODES) as Array<keyof typeof MODES>).map((mode) => (
                       <button
                         key={mode}
@@ -1096,7 +1099,7 @@ export default function App() {
                           setShotClock(MODES[mode].shotClock);
                           setIsRunning(false);
                         }}
-                        className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${gameMode === mode ? 'bg-bg-card shadow-sm text-accent' : 'text-text-secondary hover:text-text-primary'} ${hasStarted.current ? 'opacity-30 cursor-not-allowed' : ''}`}
+                        className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${gameMode === mode ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'text-text-secondary hover:text-text-primary'} ${hasStarted.current ? 'opacity-30 cursor-not-allowed' : ''}`}
                       >
                         {MODES[mode].label}
                       </button>
@@ -1106,9 +1109,9 @@ export default function App() {
               </div>
 
               {/* Group 2: System */}
-              <div className="glass-card rounded-[2rem] overflow-hidden">
+              <div className="glass-card overflow-hidden">
                 {/* Wake Lock */}
-                <div className="p-5 flex items-center justify-between border-b border-border/40">
+                <div className="p-6 flex items-center justify-between border-b border-white/5">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                       <MonitorSmartphone className="w-4 h-4 text-white" />
@@ -1180,6 +1183,11 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            {/* Credit */}
+            <div className="mt-8 pb-4 text-center opacity-30">
+              <p className="text-[9px] font-bold text-text-secondary uppercase tracking-[0.4em]">desenvolvido por superdz7</p>
+            </div>
           </div>
           )}
         </div>
@@ -1216,13 +1224,14 @@ export default function App() {
       {/* Draft Modal */}
       <AnimatePresence>
         {showDraftModal && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[200] flex items-center justify-center p-6">
+          <div className="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center p-6">
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="glass-card w-full max-w-sm rounded-[2.5rem] p-8 flex flex-col max-h-[85vh] shadow-[0_32px_64px_rgba(0,0,0,0.3)]"
+              className="glass-card w-full max-w-sm p-8 flex flex-col max-h-[85vh] shadow-2xl relative overflow-hidden"
             >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-3xl -z-0" />
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-bold text-text-primary tracking-tight">{t.equipes}</h3>
                 <button onClick={() => setShowDraftModal(false)} className="p-2 text-text-secondary hover:bg-bg-primary rounded-full transition-colors">
@@ -1232,7 +1241,7 @@ export default function App() {
               
               <div className="flex-1 overflow-y-auto space-y-6 pr-2 no-scrollbar">
                 {drawnTeams.map((team, idx) => (
-                  <div key={idx} className="bg-bg-secondary/50 rounded-3xl p-5 border border-white/5 space-y-4">
+                  <div key={idx} className="bg-bg-secondary/50 rounded-2xl p-5 border border-border space-y-4">
                     <div className="flex items-center gap-3">
                       <div className="w-1.5 h-1.5 rounded-full bg-accent" />
                       <h4 className="text-accent font-bold text-[10px] uppercase tracking-[0.2em] leading-none">
@@ -1241,9 +1250,9 @@ export default function App() {
                     </div>
                     <div className="space-y-2">
                       {team.map(player => (
-                        <div key={player.id} className="text-sm font-semibold text-text-primary flex justify-between items-center py-2.5 border-b border-white/5 last:border-0">
+                        <div key={player.id} className="text-sm font-semibold text-text-primary flex justify-between items-center py-2.5 border-b border-border last:border-0">
                           <span className="tracking-tight">{player.name}</span>
-                          <span className="text-[11px] font-bold text-text-secondary bg-bg-card/50 px-2.5 py-1 rounded-lg border border-white/5 tabular-nums shadow-sm">#{player.number}</span>
+                          <span className="text-[11px] font-bold text-text-secondary bg-bg-card/50 px-2.5 py-1 rounded-lg border border-border tabular-nums shadow-sm">#{player.number}</span>
                         </div>
                       ))}
                     </div>
@@ -1254,14 +1263,14 @@ export default function App() {
               <div className="flex flex-col gap-3 mt-8">
                 <button 
                   onClick={shareTeams}
-                  className="w-full h-14 bg-accent text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-accent/20 active:scale-95 transition-all"
+                  className="w-full h-14 bg-accent text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-accent/20 active:scale-95 transition-all"
                 >
                   <Copy className="w-5 h-5" />
                   {t.copiar}
                 </button>
                 <button 
                   onClick={() => setShowDraftModal(false)}
-                  className="w-full h-14 bg-bg-secondary text-text-primary rounded-2xl font-bold active:scale-95 transition-all text-sm"
+                  className="w-full h-14 bg-bg-secondary text-text-primary rounded-xl font-bold active:scale-95 transition-all text-sm"
                 >
                   {t.fechar || 'Fechar'}
                 </button>
@@ -1272,7 +1281,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Bottom Navigation - Fixed at bottom */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl bg-bg-card rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] px-4 py-1 flex justify-between items-center z-50 transition-colors duration-300">
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl glass-nav rounded-t-xl px-4 py-2 flex justify-between items-center z-50">
         <NavButton 
           active={activeTab === 'placar'} 
           onClick={() => setActiveTab('placar')}
@@ -1313,16 +1322,17 @@ function TimeEditor({ currentTime, onSave, onClose, t }: any) {
 
   return (
     <motion.div 
-      className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <motion.div 
-        className="w-full max-w-xs glass-card rounded-[2.5rem] p-8 flex flex-col gap-8 shadow-2xl"
+        className="w-full max-w-xs glass-card p-10 flex flex-col gap-10 shadow-3xl relative overflow-hidden"
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
       >
+        <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-transparent via-accent to-transparent opacity-50" />
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-bold text-text-primary tracking-tight">{t.editarTempo}</h3>
           <button onClick={onClose} className="p-2 text-text-secondary hover:bg-bg-primary rounded-full transition-colors"><X className="w-6 h-6" /></button>
@@ -1331,9 +1341,9 @@ function TimeEditor({ currentTime, onSave, onClose, t }: any) {
         <div className="flex justify-center items-center gap-6">
           {/* Minutes */}
           <div className="flex flex-col items-center gap-3">
-            <button onClick={() => adjustMins(1)} className="p-4 bg-bg-secondary rounded-2xl text-accent active:scale-90 transition-transform"><Plus className="w-6 h-6 font-bold" /></button>
+            <button onClick={() => adjustMins(1)} className="p-4 bg-bg-secondary rounded-xl text-accent active:scale-90 transition-transform"><Plus className="w-6 h-6 font-bold" /></button>
             <div className="text-5xl font-bold font-mono text-text-primary tracking-tighter text-digit">{mins.toString().padStart(2, '0')}</div>
-            <button onClick={() => adjustMins(-1)} className="p-4 bg-bg-secondary rounded-2xl text-accent active:scale-90 transition-transform"><Minus className="w-6 h-6 font-bold" /></button>
+            <button onClick={() => adjustMins(-1)} className="p-4 bg-bg-secondary rounded-xl text-accent active:scale-90 transition-transform"><Minus className="w-6 h-6 font-bold" /></button>
             <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{t.minutos}</span>
           </div>
 
@@ -1341,15 +1351,15 @@ function TimeEditor({ currentTime, onSave, onClose, t }: any) {
 
           {/* Seconds */}
           <div className="flex flex-col items-center gap-3">
-            <button onClick={() => adjustSecs(1)} className="p-4 bg-bg-secondary rounded-2xl text-accent active:scale-90 transition-transform"><Plus className="w-6 h-6 font-bold" /></button>
+            <button onClick={() => adjustSecs(1)} className="p-4 bg-bg-secondary rounded-xl text-accent active:scale-90 transition-transform"><Plus className="w-6 h-6 font-bold" /></button>
             <div className="text-5xl font-bold font-mono text-text-primary tracking-tighter text-digit">{secs.toString().padStart(2, '0')}</div>
-            <button onClick={() => adjustSecs(-1)} className="p-4 bg-bg-secondary rounded-2xl text-accent active:scale-90 transition-transform"><Minus className="w-6 h-6 font-bold" /></button>
+            <button onClick={() => adjustSecs(-1)} className="p-4 bg-bg-secondary rounded-xl text-accent active:scale-90 transition-transform"><Minus className="w-6 h-6 font-bold" /></button>
             <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{t.segundos}</span>
           </div>
         </div>
 
         <button 
-          className="w-full h-16 bg-accent text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow-xl shadow-accent/20 active:scale-[0.98] transition-all"
+          className="w-full h-16 bg-accent text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-xl shadow-accent/20 active:scale-[0.98] transition-all"
           onClick={() => onSave(mins * 60 + secs)}
         >
           <Check className="w-6 h-6" />
@@ -1360,7 +1370,7 @@ function TimeEditor({ currentTime, onSave, onClose, t }: any) {
   );
 }
 
-function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t, gameMode }: any) {
+function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t, gameMode, colorClass }: any) {
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(name);
 
@@ -1370,18 +1380,21 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
   };
 
   const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
+  const textColor = colorClass === 'home' ? 'text-accent-blue' : 'text-accent-green';
+  const glowClass = colorClass === 'home' ? 'text-glow-blue' : 'text-glow-green';
+
+  const labelColor = colorClass === 'home' ? 'text-accent-blue/80' : 'text-accent-green/80';
 
   return (
-    <div className="glass-card rounded-[2rem] p-4 lg:p-3.5 flex flex-col items-center justify-between transition-all duration-300 min-h-[250px] sm:min-h-[280px] lg:min-h-[240px] xl:min-h-[260px] group relative overflow-hidden">
-      <div className="absolute inset-0 bg-accent/3 opacity-0 group-hover:opacity-100 transition-opacity" />
-      
-      <div className="text-center w-full relative">
-        <span className="text-[10px] font-bold text-accent uppercase tracking-widest leading-none">{label}</span>
+    <div className={`glass-card p-6 flex flex-col items-center gap-4 transition-all duration-300 h-full`}>
+      <div className="flex flex-col items-center gap-2 w-full">
+        <span className={`text-[11px] font-bold uppercase tracking-[0.2em] ${labelColor}`}>{label}</span>
         {isEditing ? (
-          <div className="flex gap-1 mt-2">
+          <div className="flex gap-1 w-full">
             <input 
               autoFocus
-              className="w-full text-center bg-bg-primary rounded-xl text-sm font-bold text-text-primary py-2 px-3 outline-accent uppercase"
+              maxLength={12}
+              className="w-full text-center bg-slate-900/50 rounded-xl text-xs font-bold text-text-primary py-2 px-3 outline-none border border-border uppercase"
               value={tempName}
               onChange={(e) => setTempName(e.target.value)}
               onBlur={handleSave}
@@ -1389,95 +1402,75 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
             />
           </div>
         ) : (
-          <h2 
-            className="text-lg font-bold text-text-primary leading-tight truncate w-full mt-1 text-center cursor-pointer hover:text-accent transition-colors uppercase tracking-tight"
+          <motion.button 
+            className={`min-w-[110px] sm:min-w-[120px] px-3 py-1.5 rounded-2xl bg-slate-900/40 border border-border text-[11px] font-bold tracking-widest uppercase ${textColor} truncate`}
             onClick={() => setIsEditing(true)}
+            whileTap={{ scale: 0.95 }}
           >
             {name}
-          </h2>
+          </motion.button>
         )}
       </div>
 
-      <div className="flex items-baseline gap-1 relative">
-        <span className="text-6xl font-bold text-text-primary font-display tracking-tighter text-digit">{score}</span>
-        <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{t.pts}</span>
+      <div className="flex-1 flex items-center justify-center">
+        <span className={`text-[5.5rem] font-mono leading-none text-digit ${textColor} ${glowClass}`}>
+          {score.toString().padStart(2, '0')}
+        </span>
       </div>
 
-      <div className="flex flex-col gap-2.5 lg:gap-2 w-full relative">
-        {isFibaNba ? (
-          <>
-            <motion.button 
-              className="w-full h-8 lg:h-7 rounded-lg bg-accent text-white font-bold text-xs flex items-center justify-center shadow-lg shadow-accent/20"
-              whileTap={{ scale: 0.95 }}
-              onClick={onAdd2}
-            >
-              +2
-            </motion.button>
-            <div className="flex gap-2">
-              <motion.button 
-                className="flex-1 h-9 lg:h-8 rounded-lg bg-bg-secondary text-accent font-bold text-xs flex items-center justify-center border border-accent/10 active:bg-accent/10"
-                whileTap={{ scale: 0.95 }}
-                onClick={onAdd1}
-              >
-                +1
-              </motion.button>
-              <motion.button 
-                className="flex-1 h-9 lg:h-8 rounded-lg bg-bg-secondary text-accent font-bold text-xs flex items-center justify-center border border-accent/10 active:bg-accent/10"
-                whileTap={{ scale: 0.95 }}
-                onClick={onAdd3}
-              >
-                +3
-              </motion.button>
-            </div>
-          </>
-        ) : (
-          <div className="flex gap-2.5 lg:gap-2 w-full">
-            <motion.button 
-              className="flex-1 h-12 lg:h-10 rounded-xl bg-bg-secondary text-accent font-bold text-base flex items-center justify-center border border-accent/10 active:bg-accent/10"
-              whileTap={{ scale: 0.95 }}
-              onClick={onAdd1}
-            >
-              +1
-            </motion.button>
-            <motion.button 
-              className="flex-1 h-12 lg:h-10 rounded-xl bg-accent text-white font-bold text-base flex items-center justify-center shadow-lg shadow-accent/20"
-              whileTap={{ scale: 0.95 }}
-              onClick={onAdd2}
-            >
-              +2
-            </motion.button>
-          </div>
+      <div className="flex gap-3 w-full">
+        <motion.button 
+          className="flex-1 h-12 glass-button text-xs font-bold text-text-primary border-slate-800"
+          whileTap={{ scale: 0.95 }}
+          onClick={onAdd1}
+        >
+          +1
+        </motion.button>
+        <motion.button 
+          className="flex-1 h-12 glass-button text-xs font-bold text-text-primary border-slate-800"
+          whileTap={{ scale: 0.95 }}
+          onClick={onAdd2}
+        >
+          +2
+        </motion.button>
+        {isFibaNba && (
+          <motion.button 
+            className="flex-1 h-12 glass-button text-xs font-bold text-text-primary border-slate-800"
+            whileTap={{ scale: 0.95 }}
+            onClick={onAdd3}
+          >
+            +3
+          </motion.button>
         )}
       </div>
     </div>
   );
 }
 
-function FoulCard({ label, fouls, onAddFoul, t, gameMode }: any) {
+function FoulCard({ label, fouls, onAddFoul, t, gameMode, colorClass }: any) {
   const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
   const bonusThreshold = isFibaNba ? 5 : 7;
-  const isBonus = fouls >= bonusThreshold;
+  const dotActiveColor = colorClass === 'home' ? 'bg-accent-blue' : 'bg-accent-green';
+  const labelColorFull = colorClass === 'home' ? 'text-accent-blue/80' : 'text-accent-green/80';
   
   return (
     <motion.div 
-      className={`rounded-3xl p-4 flex flex-col items-start gap-2 cursor-pointer transition-all duration-300 min-h-[82px] group overflow-hidden relative ${isBonus ? 'bg-accent shadow-lg shadow-accent/20 text-white border-transparent' : 'glass-card border border-white/10 hover:scale-[1.02]'}`}
+      className={`glass-card p-6 flex items-center justify-between cursor-pointer active:scale-95 transition-transform h-full`}
       onClick={onAddFoul}
       whileTap={{ scale: 0.98 }}
     >
-      {!isBonus && <div className="absolute inset-0 bg-accent/3 opacity-0 group-hover:opacity-100 transition-opacity" />}
-      
-      <div className="w-full flex justify-between items-start relative gap-2">
-        <span className={`text-[11px] font-black uppercase tracking-tight leading-[1.1] whitespace-pre-line ${isBonus ? 'text-white' : 'text-text-primary'}`}>{label}</span>
-        <span className="text-3xl font-black font-mono text-digit leading-none pt-1">{fouls.toString().padStart(2, '0')}</span>
+      <div className="flex flex-col gap-3">
+        <span className={`text-[10px] font-bold uppercase tracking-widest ${labelColorFull} leading-tight whitespace-pre-line`}>{label}</span>
+        <div className="flex gap-1.5">
+          {[...Array(bonusThreshold)].map((_, i) => (
+            <div 
+              key={i} 
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${i < fouls ? `${dotActiveColor} shadow-sm opacity-100` : 'bg-slate-800 opacity-50'}`} 
+            />
+          ))}
+        </div>
       </div>
-      <div className="flex gap-2 justify-start w-full relative mt-auto">
-        {[...Array(bonusThreshold)].map((_, i) => (
-          <div 
-            key={i} 
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${i < fouls ? (isBonus ? 'bg-white scale-110 shadow-sm' : 'bg-accent scale-110 shadow-sm shadow-accent/20') : (isBonus ? 'bg-white/20' : 'bg-bg-secondary')}`} 
-          />
-        ))}
-      </div>
+      <span className="text-4xl font-mono text-text-primary text-digit">{fouls}</span>
     </motion.div>
   );
 }
@@ -1485,12 +1478,12 @@ function FoulCard({ label, fouls, onAddFoul, t, gameMode }: any) {
 function ControlButton({ icon, label, onClick, disabled }: any) {
   return (
     <motion.button
-      className={`flex flex-col items-center justify-center gap-1 h-12 rounded-xl glass-card border border-white/10 transition-all duration-300 ${disabled ? 'opacity-30 grayscale cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95 shadow-lg shadow-black/5'}`}
+      className={`text-[10px] sm:text-[11px] font-bold text-text-secondary uppercase tracking-widest bg-white/5 px-2.5 sm:px-4 py-2 rounded-full border border-white/10 active:scale-95 transition-all flex items-center gap-1.5 sm:gap-2 ${disabled ? 'opacity-20 grayscale cursor-not-allowed' : 'hover:bg-white/10 opacity-70 hover:opacity-100'}`}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
     >
-      <div className="text-accent">{React.cloneElement(icon as React.ReactElement, { className: 'w-4 h-4' })}</div>
-      <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{label}</span>
+      <div className="text-text-secondary">{React.cloneElement(icon as React.ReactElement, { className: 'w-3 sm:w-3.5 h-3 sm:h-3.5' })}</div>
+      <span className="leading-none">{label}</span>
     </motion.button>
   );
 }
@@ -1500,7 +1493,7 @@ function PlayerBadge({ player, isSelected, onClick }: any) {
     <motion.button
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className={`px-4 py-2 rounded-2xl text-[11px] font-bold transition-all flex items-center gap-3 border shadow-sm ${
+      className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-all flex items-center gap-3 border shadow-sm ${
         isSelected 
           ? 'bg-accent text-white border-accent shadow-accent/20' 
           : 'bg-bg-secondary text-text-primary border-transparent hover:border-accent/30'
@@ -1518,86 +1511,142 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
   const totalPoints = (player.stats.pts2.made * (gameMode === '3x3' ? 1 : 2)) + 
                      (player.stats.pts3.made * (gameMode === '3x3' ? 2 : 3)) + 
                      player.stats.ft.made;
+
+  const totalShots = (player.stats.ft.made + player.stats.ft.missed) +
+                    (player.stats.pts2.made + player.stats.pts2.missed) +
+                    (player.stats.pts3.made + player.stats.pts3.missed);
   
+  const totalMade = player.stats.ft.made + player.stats.pts2.made + player.stats.pts3.made;
+  const efficiency = totalShots > 0 ? ((totalMade / totalShots) * 100).toFixed(1) : "0.0";
+  
+  const StatItem = ({ label, category, value, isPoint = false, step = 1 }: any) => {
+    return (
+      <div className="flex flex-col gap-1.5 p-2 bg-bg-primary/30 rounded-xl border border-border/50">
+        <span className="text-xs font-display text-text-secondary uppercase tracking-wider text-center">{label}</span>
+        
+        {isPoint ? (
+          <div className="flex flex-col gap-2">
+            <div className="text-center">
+              <span className="text-sm font-black text-text-primary">{value.made}</span>
+              <span className="text-[10px] text-text-secondary font-medium ml-1">/{value.made + value.missed}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button 
+                onClick={() => updatePlayerStat(player.id, category, 'made', 1)}
+                className="h-8 bg-green-500/10 text-green-500 border border-green-500/20 rounded-lg text-xs font-black active:scale-95 transition-all flex items-center justify-center"
+              >
+                +{step}
+              </button>
+              <button 
+                onClick={() => updatePlayerStat(player.id, category, 'missed', 1)}
+                className="h-8 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg text-xs font-black active:scale-95 transition-all flex items-center justify-center"
+              >
+                -{step}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <div className="text-center">
+              <span className="text-sm font-black text-text-primary">{value}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button 
+                onClick={() => updatePlayerStat(player.id, category, 1)}
+                className="h-8 bg-accent/10 text-accent border border-accent/20 rounded-lg text-xs font-black active:scale-95 transition-all flex items-center justify-center"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+              <button 
+                onClick={() => updatePlayerStat(player.id, category, -1)}
+                className="h-8 bg-bg-card text-text-secondary border border-border rounded-lg text-xs font-black active:scale-95 transition-all flex items-center justify-center"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div className="glass-card rounded-[2rem] lg:rounded-[1.5rem] p-4 lg:p-3 space-y-3 lg:space-y-2.5 shadow-[0_15px_30px_rgba(0,0,0,0.08)]">
-      <div className="flex justify-between items-center pb-2.5 border-b border-border/20">
+    <div className="glass-card p-4 space-y-4 shadow-xl rounded-2xl">
+      <div className="flex justify-between items-center pb-3 border-b border-border">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center text-white font-black text-sm shadow-[0_4px_12px_rgba(255,149,0,0.3)] shrink-0">
+          <div className="w-9 h-9 bg-accent rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0">
             {player.number || '00'}
           </div>
           <div className="min-w-0">
-            <h3 className="font-black text-text-primary tracking-tight text-base uppercase leading-none truncate">{player.name}</h3>
-            <p className="text-[9px] font-black text-accent uppercase tracking-widest mt-1 flex items-center gap-1">
-              <span className="w-1 h-1 rounded-full bg-accent" /> TOTAL: {totalPoints} {t.pts}
-            </p>
+            <h3 className="font-display text-text-primary tracking-wide text-base uppercase truncate">{player.name}</h3>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-[9px] font-bold text-accent uppercase tracking-widest">
+                {totalPoints} {t.pts}
+              </p>
+              <span className="w-1 h-1 rounded-full bg-border" />
+              <p className="text-[9px] font-bold text-green-500 uppercase tracking-widest">
+                {efficiency}% {t.aproveitamento || 'Eficiência'}
+              </p>
+            </div>
           </div>
         </div>
         <button 
           onClick={() => removePlayer(player.id)} 
-          className="w-8 h-8 flex items-center justify-center text-text-secondary hover:bg-bg-secondary hover:text-red-500 rounded-full transition-all border border-border/10 shrink-0"
+          className="p-2 text-text-secondary hover:text-red-500 rounded-full transition-all"
         >
-          <X className="w-3.5 h-3.5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="space-y-3.5 lg:space-y-3">
-        {[
-          { key: 'pts2' as const, label: gameMode === '3x3' ? '1 Ponto' : t.pts2 },
-          { key: 'pts3' as const, label: gameMode === '3x3' ? '2 Pontos' : t.pts3 },
-          { key: 'ft' as const, label: t.lanceLivre },
-        ].map(cat => {
-          const total = player.stats[cat.key].made + player.stats[cat.key].missed;
-          const perc = total > 0 ? ((player.stats[cat.key].made / total) * 100).toFixed(1) : '0.0';
-          return (
-            <div key={cat.key} className="space-y-2">
-              <div className="flex justify-between items-center px-1">
-                <span className="text-sm font-black text-text-primary tracking-tight">{cat.label}</span>
-                <span className="text-[10px] font-black text-accent">{perc}%</span>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <span className="text-[7px] font-black text-text-secondary uppercase tracking-[0.1em] px-1">{t.acertou}</span>
-                  <div className="flex items-center justify-between bg-bg-secondary rounded-xl p-0.5 border border-border/10 group/btn">
-                    <button 
-                      onClick={() => updatePlayerStat(player.id, cat.key, 'made', -1)}
-                      className="w-7 h-7 flex items-center justify-center text-text-secondary hover:text-red-500 active:scale-90 transition-all opacity-70 hover:opacity-100 bg-bg-card border border-border/20 rounded-lg shadow-sm"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="font-black text-xs tabular-nums text-text-primary">{player.stats[cat.key].made}</span>
-                    <button 
-                      onClick={() => updatePlayerStat(player.id, cat.key, 'made', 1)}
-                      className="w-7 h-7 flex items-center justify-center text-accent active:scale-90 transition-all bg-accent/10 border border-accent/20 rounded-lg shadow-sm"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
+      <div className="grid grid-cols-2 gap-3">
+        {/* Column 1 */}
+        <div className="space-y-3">
+          <StatItem 
+            label="1 Ponto" 
+            category="ft" 
+            value={player.stats.ft} 
+            isPoint={true} 
+            step={1} 
+          />
+          <StatItem 
+            label="2 Pontos" 
+            category="pts2" 
+            value={player.stats.pts2} 
+            isPoint={true} 
+            step={2} 
+          />
+          <StatItem 
+            label="3 Pontos" 
+            category="pts3" 
+            value={player.stats.pts3} 
+            isPoint={true} 
+            step={3} 
+          />
+          <StatItem 
+            label={t.asst} 
+            category="assists" 
+            value={player.stats.assists} 
+          />
+        </div>
 
-                <div className="space-y-1">
-                  <span className="text-[7px] font-black text-text-secondary uppercase tracking-[0.1em] px-1">{t.errou}</span>
-                  <div className="flex items-center justify-between bg-bg-secondary rounded-xl p-0.5 border border-border/10 group/btn">
-                    <button 
-                      onClick={() => updatePlayerStat(player.id, cat.key, 'missed', -1)}
-                      className="w-7 h-7 flex items-center justify-center text-text-secondary hover:text-red-500 active:scale-90 transition-all opacity-70 hover:opacity-100 bg-bg-card border border-border/20 rounded-lg shadow-sm"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="font-black text-xs tabular-nums text-text-primary">{player.stats[cat.key].missed}</span>
-                    <button 
-                      onClick={() => updatePlayerStat(player.id, cat.key, 'missed', 1)}
-                      className="w-7 h-7 flex items-center justify-center text-text-secondary active:scale-90 transition-all bg-bg-card border border-border/20 rounded-lg shadow-sm"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {/* Column 2 */}
+        <div className="space-y-3">
+          <StatItem 
+            label={t.reb} 
+            category="rebounds" 
+            value={player.stats.rebounds} 
+          />
+          <StatItem 
+            label={t.stl} 
+            category="steals" 
+            value={player.stats.steals} 
+          />
+          <StatItem 
+            label={t.blk} 
+            category="blocks" 
+            value={player.stats.blocks} 
+          />
+        </div>
       </div>
     </div>
   );
@@ -1609,16 +1658,16 @@ function NavButton({ active, onClick, icon, label }: any) {
       className="flex-1 flex flex-col items-center gap-0.5 group py-1.5 relative"
       onClick={onClick}
     >
-      <div className={`p-1.5 rounded-2xl transition-all duration-300 relative z-10 ${active ? 'text-accent scale-110' : 'text-text-secondary group-hover:text-accent/70'}`}>
+      <div className={`p-1.5 rounded-xl transition-all duration-300 relative z-10 ${active ? 'text-accent scale-110' : 'text-text-secondary group-hover:text-accent/70'}`}>
         {React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}
       </div>
-      <span className={`text-[10px] font-bold tracking-tight z-10 ${active ? 'text-text-primary' : 'text-text-secondary'}`}>
+      <span className={`text-[10px] font-medium tracking-tight z-10 ${active ? 'text-accent-blue' : 'text-text-secondary'}`}>
         {label}
       </span>
       {active && (
         <motion.div 
           layoutId="nav-glow"
-          className="absolute inset-x-2 inset-y-1 bg-accent/10 rounded-[1.5rem] -z-0"
+          className="absolute inset-x-2 inset-y-1 bg-accent/10 rounded-xl -z-0"
           initial={false}
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
         />
@@ -1636,7 +1685,7 @@ function ConfirmModal({ title, message, onConfirm, onCancel, t }: any) {
       exit={{ opacity: 0 }}
     >
       <motion.div 
-        className="w-full max-w-xs glass-card rounded-[2.5rem] p-8 flex flex-col gap-8 shadow-2xl"
+        className="w-full max-w-xs glass-card p-8 flex flex-col gap-10 shadow-3xl"
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
       >
@@ -1647,13 +1696,13 @@ function ConfirmModal({ title, message, onConfirm, onCancel, t }: any) {
 
         <div className="flex flex-col gap-3">
           <button 
-            className="w-full h-14 bg-accent text-white rounded-2xl font-bold text-lg shadow-xl shadow-accent/20 active:scale-95 transition-all"
+            className="w-full h-14 bg-accent text-white rounded-xl font-bold text-lg shadow-xl shadow-accent/20 active:scale-95 transition-all"
             onClick={onConfirm}
           >
             {t.reiniciar}
           </button>
           <button 
-            className="w-full h-14 bg-bg-secondary text-text-primary rounded-2xl font-bold text-lg active:scale-95 transition-all"
+            className="w-full h-14 bg-bg-secondary text-text-primary rounded-xl font-bold text-lg active:scale-95 transition-all"
             onClick={onCancel}
           >
             {t.fechar || 'Cancelar'}

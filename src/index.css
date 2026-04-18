@@ -6,23 +6,23 @@
   --font-display: "Bebas Neue", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  /* App Palette - Inspired by Image */
-  --color-bg-deep: #020617;
-  --color-bg-card: rgba(15, 23, 42, 0.4);
-  --color-accent-blue: #22d3ee;
-  --color-accent-green: #22c55e;
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #64748b;
-  --color-border: rgba(30, 41, 59, 0.3);
+  /* Simpler, Lightweight Dark Palette */
+  --color-bg-deep: #0a0a0a;
+  --color-bg-card: rgba(255, 255, 255, 0.02);
+  --color-accent-blue: #00d2ff;
+  --color-accent-green: #00ffaa;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-border: rgba(255, 255, 255, 0.06);
   
-  /* Legacy mapping for components using generic 'accent' */
-  --color-accent: #22d3ee;
-  --color-accent-hover: #0891b2;
+  /* Legacy mapping */
+  --color-accent: #00d2ff;
+  --color-accent-hover: #00b9e2;
 }
 
 .dark {
-  --color-bg-primary: #020617;
-  --color-bg-secondary: #0f172a;
+  --color-bg-primary: #0a0a0a;
+  --color-bg-secondary: #141414;
 }
 
 @layer base {
@@ -37,23 +37,22 @@
   }
 
   body {
-    @apply bg-bg-deep text-text-primary antialiased transition-colors duration-300;
-    background-image: radial-gradient(circle at 50% -20%, #0f172a 0%, #020617 100%);
+    @apply bg-bg-deep text-text-primary antialiased;
     -webkit-tap-highlight-color: transparent;
   }
 }
 
 @layer utilities {
   .glass-card {
-    @apply bg-bg-card backdrop-blur-md border border-border rounded-[40px] shadow-2xl;
+    @apply bg-bg-card border border-border rounded-none;
   }
 
   .glass-button {
-    @apply bg-slate-900/20 border border-slate-800/50 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 hover:bg-slate-900/40;
+    @apply bg-white/[0.03] border border-white/[0.08] rounded-none flex items-center justify-center transition-all duration-200 active:scale-95 hover:bg-white/[0.06];
   }
 
   .glass-nav {
-    @apply bg-bg-deep/80 backdrop-blur-3xl border-t border-slate-800/50 shadow-[0_-8px_32px_rgba(0,0,0,0.5)];
+    @apply bg-bg-deep border-t border-white/[0.08] shadow-2xl;
   }
 
   .text-glow-blue {

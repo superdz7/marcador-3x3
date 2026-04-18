@@ -784,7 +784,7 @@ export default function App() {
           <motion.button 
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsMenuOpen(true)}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-secondary border border-border text-text-primary active:scale-95 transition-all"
+            className="w-10 h-10 hidden lg:flex items-center justify-center rounded-xl bg-bg-secondary border border-border text-text-primary active:scale-95 transition-all"
           >
             <Menu className="w-6 h-6" />
           </motion.button>
@@ -1360,6 +1360,34 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+      
+      {/* Bottom Navigation - Fixed at bottom (Mobile/Tablet Only) */}
+      <nav className="fixed bottom-0 left-0 right-0 lg:hidden glass-nav px-4 pb-2 pt-1 flex justify-between items-center z-50">
+        <NavButton 
+          active={activeTab === 'placar'} 
+          onClick={() => setActiveTab('placar')}
+          icon={<LayoutGrid className="w-5 h-5" />}
+          label={t.placar}
+        />
+        <NavButton 
+          active={activeTab === 'estatisticas'} 
+          onClick={() => setActiveTab('estatisticas')}
+          icon={<BarChart3 className="w-5 h-5" />}
+          label={t.estatisticas}
+        />
+        <NavButton 
+          active={activeTab === 'historico'} 
+          onClick={() => setActiveTab('historico')}
+          icon={<History className="w-5 h-5" />}
+          label={t.historicoPartida}
+        />
+        <NavButton 
+          active={activeTab === 'opcoes'} 
+          onClick={() => setActiveTab('opcoes')}
+          icon={<Settings className="w-5 h-5" />}
+          label={t.configuracoes}
+        />
+      </nav>
     </div>
   );
 }
@@ -1734,13 +1762,13 @@ function MenuItem({ icon, label, active, onClick }: any) {
 function NavButton({ active, onClick, icon, label }: any) {
   return (
     <button 
-      className="flex-1 flex flex-col items-center gap-0.5 group py-1.5 relative"
+      className="flex-1 flex flex-col items-center gap-0 group py-0.5 relative"
       onClick={onClick}
     >
-      <div className={`p-1.5 rounded-xl transition-all duration-300 relative z-10 ${active ? 'text-accent scale-110' : 'text-text-secondary group-hover:text-accent/70'}`}>
-        {React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}
+      <div className={`p-1 rounded-xl transition-all duration-300 relative z-10 ${active ? 'text-accent scale-110' : 'text-text-secondary group-hover:text-accent/70'}`}>
+        {React.cloneElement(icon as React.ReactElement, { className: 'w-4 h-4' })}
       </div>
-      <span className={`text-[10px] font-medium tracking-tight z-10 ${active ? 'text-accent-blue' : 'text-text-secondary'}`}>
+      <span className={`text-[9px] font-bold tracking-tighter z-10 uppercase ${active ? 'text-accent-blue' : 'text-text-secondary'}`}>
         {label}
       </span>
       {active && (

@@ -1526,8 +1526,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
 }
 
 function FoulCard({ label, fouls, onAddFoul, t, gameMode, colorClass }: any) {
-  const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
-  const bonusThreshold = isFibaNba ? 5 : 7;
+  const bonusThreshold = 7;
   const isCritical = fouls >= 7;
   const dotActiveColor = isCritical ? 'bg-red-500' : (colorClass === 'home' ? 'bg-accent-blue' : 'bg-accent-green');
   const labelColorFull = isCritical ? 'text-red-500/80' : (colorClass === 'home' ? 'text-accent-blue/80' : 'text-accent-green/80');

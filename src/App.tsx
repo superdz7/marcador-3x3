@@ -775,7 +775,7 @@ export default function App() {
         </div>
         
         <div className="flex items-center gap-4">
-          <span className="text-[10px] font-bold text-accent-blue bg-accent-blue/10 border border-accent-blue/20 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-none uppercase tracking-wider whitespace-nowrap">
+          <span className="text-[10px] font-bold text-accent-blue bg-accent-blue/20 border border-accent-blue/40 px-4 py-2 rounded-none uppercase tracking-widest whitespace-nowrap shadow-glow-blue">
             {MODES[gameMode].label}
           </span>
           <motion.button 
@@ -1376,7 +1376,7 @@ export default function App() {
           active={activeTab === 'historico'} 
           onClick={() => setActiveTab('historico')}
           icon={<History className="w-5 h-5" />}
-          label={t.historicoPartida}
+          label={t.historico}
         />
         <NavButton 
           active={activeTab === 'opcoes'} 
@@ -1740,7 +1740,7 @@ function MenuItem({ icon, label, active, onClick }: any) {
       onClick={onClick}
       className={`group flex items-center gap-4 p-5 rounded-none transition-all border ${
         active 
-          ? 'bg-accent/10 border-accent/20 text-accent' 
+          ? 'bg-accent/20 border-accent/40 text-accent ring-1 ring-accent/20' 
           : 'bg-white/[0.02] border-white/5 text-text-secondary hover:bg-white/5 hover:text-text-primary'
       }`}
     >
@@ -1759,22 +1759,29 @@ function MenuItem({ icon, label, active, onClick }: any) {
 function NavButton({ active, onClick, icon, label }: any) {
   return (
     <button 
-      className="flex-1 flex flex-col items-center gap-0 group py-0.5 relative"
+      className="flex-1 flex flex-col items-center gap-0.5 group py-2 relative"
       onClick={onClick}
     >
       <div className={`p-1 rounded-none transition-all duration-300 relative z-10 ${active ? 'text-accent scale-110' : 'text-text-secondary group-hover:text-accent/70'}`}>
         {React.cloneElement(icon as React.ReactElement, { className: 'w-4 h-4' })}
       </div>
-      <span className={`text-[9px] font-bold tracking-tighter z-10 uppercase ${active ? 'text-accent-blue' : 'text-text-secondary'}`}>
+      <span className={`text-[9px] font-black tracking-tighter z-10 uppercase ${active ? 'text-accent' : 'text-text-secondary'}`}>
         {label}
       </span>
       {active && (
-        <motion.div 
-          layoutId="nav-glow"
-          className="absolute inset-x-2 inset-y-1 bg-accent/10 rounded-none -z-0"
-          initial={false}
-          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-        />
+        <>
+          <motion.div 
+            layoutId="nav-line"
+            className="absolute top-0 left-0 right-0 h-0.5 bg-accent z-20"
+            initial={false}
+          />
+          <motion.div 
+            layoutId="nav-glow"
+            className="absolute inset-0 bg-accent/20 rounded-none -z-0"
+            initial={false}
+            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+          />
+        </>
       )}
     </button>
   );

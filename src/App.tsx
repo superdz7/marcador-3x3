@@ -302,38 +302,81 @@ const Digit = ({ value }: { value: string | number }) => (
 
 export default function App() {
   // --- State ---
-  const [language, setLanguage] = useState<'pt' | 'en' | 'es'>('pt');
+  const [language, setLanguage] = useState<'pt' | 'en' | 'es'>(() => (localStorage.getItem('bt_language') as any) || 'pt');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [gameMode, setGameMode] = useState<keyof typeof MODES>('3x3');
+  const [gameMode, setGameMode] = useState<keyof typeof MODES>(() => (localStorage.getItem('bt_gameMode') as any) || '3x3');
   const [wakeLockEnabled, setWakeLockEnabled] = useState(false);
   const [gameEndSoundEnabled, setGameEndSoundEnabled] = useState(true);
   const [shotClockSoundEnabled, setShotClockSoundEnabled] = useState(true);
   
-  const [gameTime, setGameTime] = useState(MODES[gameMode].gameTime);
-  const [shotClock, setShotClock] = useState(MODES[gameMode].shotClock);
-  const [homeScore, setHomeScore] = useState(0);
-  const [visitorScore, setVisitorScore] = useState(0);
-  const [homeFouls, setHomeFouls] = useState(0);
-  const [visitorFouls, setVisitorFouls] = useState(0);
-  const [homeName, setHomeName] = useState('BE CITY');
-  const [visitorName, setVisitorName] = useState('BULLS');
+  const [players, setPlayers] = useState<Player[]>(() => {
+    const saved = localStorage.getItem('bt_players');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [history, setHistory] = useState<HistoryAction[]>(() => {
+    const saved = localStorage.getItem('bt_history');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [homeScore, setHomeScore] = useState(() => {
+    const s = localStorage.getItem('bt_homeScore');
+    return s !== null ? Number(s) : 0;
+  });
+  const [visitorScore, setVisitorScore] = useState(() => {
+    const s = localStorage.getItem('bt_visitorScore');
+    return s !== null ? Number(s) : 0;
+  });
+  const [homeFouls, setHomeFouls] = useState(() => {
+    const s = localStorage.getItem('bt_homeFouls');
+    return s !== null ? Number(s) : 0;
+  });
+  const [visitorFouls, setVisitorFouls] = useState(() => {
+    const s = localStorage.getItem('bt_visitorFouls');
+    return s !== null ? Number(s) : 0;
+  });
+  const [gameTime, setGameTime] = useState(() => {
+    const s = localStorage.getItem('bt_gameTime');
+    return s !== null ? Number(s) : MODES[gameMode].gameTime;
+  });
+  const [shotClock, setShotClock] = useState(() => {
+    const s = localStorage.getItem('bt_shotClock');
+    return s !== null ? Number(s) : MODES[gameMode].shotClock;
+  });
+  const [homeName, setHomeName] = useState(() => localStorage.getItem('bt_homeName') || 'BE CITY');
+  const [visitorName, setVisitorName] = useState(() => localStorage.getItem('bt_visitorName') || 'BULLS');
+  
   const [isRunning, setIsRunning] = useState(false);
   const [activeTab, setActiveTab] = useState('placar');
-  const [history, setHistory] = useState<HistoryAction[]>([]);
   const [isEditingTime, setIsEditingTime] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [players, setPlayers] = useState<Player[]>([]);
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [drawnTeams, setDrawnTeams] = useState<Player[][]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const hasStarted = useRef(false);
+  const hasStarted = useRef(localStorage.getItem('bt_hasStarted') === 'true');
   const buzzerPlayedRef = useRef(false);
   const [shotClockBuzzerPlayed, setShotClockBuzzerPlayed] = useState(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const wakeLockRef = useRef<any>(null);
+  const lastTickRef = useRef<number>(0);
+
+  // Persistence triggers
+  useEffect(() => {
+    localStorage.setItem('bt_players', JSON.stringify(players));
+    localStorage.setItem('bt_history', JSON.stringify(history));
+    localStorage.setItem('bt_homeScore', homeScore.toString());
+    localStorage.setItem('bt_visitorScore', visitorScore.toString());
+    localStorage.setItem('bt_homeFouls', homeFouls.toString());
+    localStorage.setItem('bt_visitorFouls', visitorFouls.toString());
+    localStorage.setItem('bt_gameTime', gameTime.toString());
+    localStorage.setItem('bt_shotClock', shotClock.toString());
+    localStorage.setItem('bt_homeName', homeName);
+    localStorage.setItem('bt_visitorName', visitorName);
+    localStorage.setItem('bt_hasStarted', hasStarted.current.toString());
+    localStorage.setItem('bt_language', language);
+    localStorage.setItem('bt_gameMode', gameMode);
+  }, [players, history, homeScore, visitorScore, homeFouls, visitorFouls, gameTime, shotClock, homeName, visitorName, language, gameMode]);
 
   const t = TRANSLATIONS[language];
 
@@ -423,10 +466,15 @@ export default function App() {
         pts2: { made: 0, missed: 0 },
         pts3: { made: 0, missed: 0 },
         ft: { made: 0, missed: 0 },
+        assists: 0,
+        rebounds: 0,
+        steals: 0,
+        blocks: 0,
       }
     })));
     hasStarted.current = false;
     setShowResetConfirm(false);
+    localStorage.clear(); // Reset persistence on new game
   };
 
   const playBuzzer = async (isGameEnd = false) => {
@@ -671,6 +719,17 @@ export default function App() {
       if (wakeLockEnabled && document.visibilityState === 'visible') {
         await requestWakeLock();
       }
+      
+      // Sincronizar tempo se estiver rodando ao voltar para o app
+      if (document.visibilityState === 'visible' && isRunning && lastTickRef.current > 0) {
+        const now = Date.now();
+        const delta = Math.floor((now - lastTickRef.current) / 1000);
+        if (delta >= 1) {
+          lastTickRef.current = now - ((now - lastTickRef.current) % 1000);
+          setGameTime(prev => Math.max(0, prev - delta));
+          setShotClock(prev => Math.max(0, prev - delta));
+        }
+      }
     };
 
     if (wakeLockEnabled) {
@@ -700,21 +759,25 @@ export default function App() {
         saveToHistory(t.inicioPartida);
         hasStarted.current = true;
       }
+      lastTickRef.current = Date.now();
       timerRef.current = setInterval(() => {
-        setGameTime(prev => {
-          if (prev <= 1) {
-            return 0;
-          }
-          return prev - 1;
-        });
+        const now = Date.now();
+        const delta = Math.floor((now - lastTickRef.current) / 1000);
+        
+        if (delta >= 1) {
+          lastTickRef.current = now - ((now - lastTickRef.current) % 1000); // Compensate exactly
+          
+          setGameTime(prev => {
+            if (prev <= delta) return 0;
+            return prev - delta;
+          });
 
-        setShotClock(prev => {
-          if (prev <= 1) {
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+          setShotClock(prev => {
+            if (prev <= delta) return 0;
+            return prev - delta;
+          });
+        }
+      }, 100); // Check more frequently but only subtract when delta >= 1
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
     }

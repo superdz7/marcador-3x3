@@ -197,6 +197,9 @@ const TRANSLATIONS: any = {
     derrotas: 'D',
     saldo: 'Saldo',
     sortear: 'Sortear',
+    iniciarPlacar: 'Iniciar Placar',
+    enviarAoCampeonato: 'Atualizar no Campeonato',
+    placarAtualizado: 'Placar atualizado no campeonato!',
     iniciarJogoNoPlacar: 'Iniciar no Placar',
     p: 'P',
     pj: 'PJ',
@@ -290,6 +293,9 @@ const TRANSLATIONS: any = {
     derrotas: 'L',
     saldo: 'Diff',
     sortear: 'Draw',
+    iniciarPlacar: 'Start Scoreboard',
+    enviarAoCampeonato: 'Update Tournament',
+    placarAtualizado: 'Score updated in tournament!',
     iniciarJogoNoPlacar: 'Start on Scoreboard',
     p: 'P',
     pj: 'GP',
@@ -381,6 +387,9 @@ const TRANSLATIONS: any = {
     derrotas: 'D',
     saldo: 'Dif',
     sortear: 'Sortear',
+    iniciarPlacar: 'Iniciar Marcador',
+    enviarAoCampeonato: 'Actualizar en Campeonato',
+    placarAtualizado: '¡Marcador actualizado en el campeonato!',
     iniciarJogoNoPlacar: 'Iniciar en Marcador',
     p: 'P',
     pj: 'PJ',
@@ -446,6 +455,8 @@ export default function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [showTournamentResetConfirm, setShowTournamentResetConfirm] = useState(false);
   
+  const [activeTournamentMatchId, setActiveTournamentMatchId] = useState<string | null>(() => localStorage.getItem('bt_activeMatchId'));
+  
   // Tournament State
   const [tournamentTeams, setTournamentTeams] = useState<TournamentTeam[]>(() => {
     const saved = localStorage.getItem('bt_tournamentTeams');
@@ -498,10 +509,15 @@ export default function App() {
       localStorage.setItem('bt_tournamentTeams', JSON.stringify(tournamentTeams));
       localStorage.setItem('bt_tournamentMatches', JSON.stringify(tournamentMatches));
       localStorage.setItem('bt_tournamentSettings', JSON.stringify(tournamentSettings));
+      if (activeTournamentMatchId) {
+        localStorage.setItem('bt_activeMatchId', activeTournamentMatchId);
+      } else {
+        localStorage.removeItem('bt_activeMatchId');
+      }
     } catch (e) {
       console.warn('Failed to save to localStorage', e);
     }
-  }, [players, history, homeScore, visitorScore, homeFouls, visitorFouls, gameTime, shotClock, homeName, visitorName, language, gameMode, activeTab, tournamentTeams, tournamentMatches, tournamentSettings]);
+  }, [players, history, homeScore, visitorScore, homeFouls, visitorFouls, gameTime, shotClock, homeName, visitorName, language, gameMode, activeTab, tournamentTeams, tournamentMatches, tournamentSettings, activeTournamentMatchId]);
 
   const t = TRANSLATIONS[language];
 
@@ -613,7 +629,7 @@ export default function App() {
     })));
     hasStarted.current = false;
     setShowResetConfirm(false);
-    localStorage.clear(); // Reset persistence on new game
+    setActiveTournamentMatchId(null);
   };
 
   const playBuzzer = async (isGameEnd = false) => {
@@ -906,12 +922,31 @@ export default function App() {
         setGameTime(MODES[gameMode].gameTime);
         setShotClock(MODES[gameMode].shotClock);
         setIsRunning(false);
+        setActiveTournamentMatchId(match.id);
         setActiveTab('placar');
         setToast({ 
             message: language === 'pt' ? `Jogo carregado: ${home.name} x ${visitor.name}` : `Game loaded: ${home.name} x ${visitor.name}`, 
             type: 'success' 
         });
     }
+  };
+
+  const updateTournamentScore = () => {
+    if (!activeTournamentMatchId) return;
+
+    setTournamentMatches(prev => prev.map(match => {
+      if (match.id === activeTournamentMatchId) {
+        return {
+          ...match,
+          homeScore,
+          visitorScore,
+          status: 'finished'
+        };
+      }
+      return match;
+    }));
+
+    setToast({ message: t.placarAtualizado, type: 'success' });
   };
 
   const shareTeams = () => {
@@ -1368,6 +1403,24 @@ export default function App() {
                 onClick={() => setShowResetConfirm(true)}
               />
             </div>
+
+            {activeTournamentMatchId && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-center mt-4 px-2"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full max-w-[450px] bg-accent/20 border border-accent text-accent text-[11px] font-black uppercase tracking-widest py-4 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(var(--accent-rgb),0.1)]"
+                  onClick={updateTournamentScore}
+                >
+                  <Trophy className="w-4 h-4" />
+                  {t.enviarAoCampeonato}
+                </motion.button>
+              </motion.div>
+            )}
           </div>
 
           {/* Column 2: History/Stats (Always visible on lg if activeTab is placar/stats) */}
@@ -2259,7 +2312,7 @@ function BracketMatch({ match, teams, onUpdateResult, onTransfer, t, isHighlight
           </div>
           <input 
             type="number"
-            className={`${compact ? 'w-8 h-6' : 'w-10'} bg-black/40 border border-white/10 text-center text-xs font-bold p-1 outline-none no-scrollbar ${homeWinner ? 'text-accent' : 'text-text-primary'}`}
+            className={`${compact ? 'w-14 h-8' : 'w-16 h-10'} bg-black/40 border border-white/10 text-center text-xs font-bold px-1 outline-none no-scrollbar ${homeWinner ? 'text-accent' : 'text-text-primary'}`}
             value={match.homeScore ?? 0}
             onChange={(e) => onUpdateResult(match.id, parseInt(e.target.value) || 0, match.visitorScore)}
           />
@@ -2275,7 +2328,7 @@ function BracketMatch({ match, teams, onUpdateResult, onTransfer, t, isHighlight
           </div>
           <input 
             type="number"
-            className={`${compact ? 'w-8 h-6' : 'w-10'} bg-black/40 border border-white/10 text-center text-xs font-bold p-1 outline-none no-scrollbar ${visitorWinner ? 'text-accent' : 'text-text-primary'}`}
+            className={`${compact ? 'w-14 h-8' : 'w-16 h-10'} bg-black/40 border border-white/10 text-center text-xs font-bold px-1 outline-none no-scrollbar ${visitorWinner ? 'text-accent' : 'text-text-primary'}`}
             value={match.visitorScore ?? 0}
             onChange={(e) => onUpdateResult(match.id, match.homeScore, parseInt(e.target.value) || 0)}
           />
@@ -2288,7 +2341,7 @@ function BracketMatch({ match, teams, onUpdateResult, onTransfer, t, isHighlight
         className={`w-full ${compact ? 'py-1' : 'py-1.5'} transition-all text-[8px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 border-t border-white/5 ${(!home || !visitor) ? 'opacity-20 cursor-not-allowed' : 'bg-accent/5 hover:bg-accent/20 text-accent'}`}
       >
         <MonitorSmartphone className="w-3 h-3" />
-        {!compact && t.iniciarJogoNoPlacar}
+        {t.iniciarPlacar}
       </button>
 
       {isFinished && (

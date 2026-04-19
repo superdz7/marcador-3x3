@@ -1587,7 +1587,7 @@ export default function App() {
                 <div className="flex gap-2">
                   <input 
                     type="text"
-                    maxLength={15}
+                    maxLength={16}
                     placeholder={t.adicionarTime}
                     className="flex-1 bg-white/5 border border-white/10 rounded-none px-4 py-2 text-xs font-semibold text-text-primary outline-accent"
                     onKeyDown={(e) => {
@@ -2318,7 +2318,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
           <div className="flex gap-1 w-full">
             <input 
               autoFocus
-              maxLength={12}
+              maxLength={16}
               className="w-full text-center bg-white/5 rounded-none text-lg font-display font-black text-text-primary py-2 px-3 outline-none border-b border-white/20 uppercase"
               value={tempName || ''}
               onChange={(e) => setTempName(e.target.value)}

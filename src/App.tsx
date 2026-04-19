@@ -1210,6 +1210,7 @@ export default function App() {
             {activeTab === 'placar' ? t.placar : 
              activeTab === 'estatisticas' ? t.estatisticas : 
              activeTab === 'historico' ? t.historico : 
+             activeTab === 'campeonato' ? t.campeonato :
              t.configuracoes}
           </motion.div>
         </div>
@@ -1537,11 +1538,6 @@ export default function App() {
             <div className="flex-1 flex flex-col gap-6 min-h-0 mb-4 pb-20 overflow-y-auto no-scrollbar">
               {/* Header Info */}
               <div className="glass-card p-6 flex flex-col gap-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-1.5 h-6 bg-accent rounded-none" />
-                  <h3 className="text-sm font-bold text-text-primary uppercase tracking-[0.2em]">{t.campeonato}</h3>
-                </div>
-                
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest flex items-center gap-2">
@@ -1769,7 +1765,6 @@ export default function App() {
           {activeTab === 'historico' && (
           <div className="flex-1 flex flex-col gap-6 min-h-0 mb-4 pb-20 lg:max-w-4xl lg:mx-auto lg:w-full">
             <div className="flex justify-between items-center px-1">
-              <h2 className="text-xl font-display font-bold text-white tracking-[0.2em] uppercase hidden lg:block">{t.historico}</h2>
               <motion.button
                 className="p-3 bg-accent text-white rounded-none shadow-none flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest active:scale-95 transition-transform ml-auto"
                 onClick={shareHistory}

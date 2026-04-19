@@ -196,7 +196,7 @@ const TRANSLATIONS: any = {
     vitorias: 'V',
     derrotas: 'D',
     saldo: 'Saldo',
-    sortearJogos: 'Sortear Jogos',
+    sortear: 'Sortear',
     iniciarJogoNoPlacar: 'Iniciar no Placar',
     p: 'P',
     pj: 'PJ',
@@ -289,7 +289,7 @@ const TRANSLATIONS: any = {
     vitorias: 'W',
     derrotas: 'L',
     saldo: 'Diff',
-    sortearJogos: 'Draw Matches',
+    sortear: 'Draw',
     iniciarJogoNoPlacar: 'Start on Scoreboard',
     p: 'P',
     pj: 'GP',
@@ -380,7 +380,7 @@ const TRANSLATIONS: any = {
     vitorias: 'V',
     derrotas: 'D',
     saldo: 'Dif',
-    sortearJogos: 'Sortear Partidos',
+    sortear: 'Sortear',
     iniciarJogoNoPlacar: 'Iniciar en Marcador',
     p: 'P',
     pj: 'PJ',
@@ -1361,64 +1361,135 @@ export default function App() {
             </div>
           </div>
 
-          {/* Column 2: Estatisticas (Always visible on lg if activeTab is placar/stats) */}
+          {/* Column 2: History/Stats (Always visible on lg if activeTab is placar/stats) */}
           <div className={`flex-1 flex flex-col gap-6 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto no-scrollbar pb-32 lg:pb-4 ${activeTab === 'estatisticas' ? 'flex' : (activeTab === 'placar' ? 'hidden lg:flex' : 'hidden')}`}>
-            <div className="flex items-center px-1">
-              <div className="flex gap-2 ml-auto">
-                <motion.button 
-                  onClick={handleDraft}
-                  className="text-[11px] font-bold text-accent uppercase tracking-widest bg-accent/10 px-4 py-2 rounded-none border border-accent/20 active:scale-95 transition-all flex items-center gap-2"
-                >
-                  <Users className="w-3.5 h-3.5" />
-                  {t.sorteio}
-                </motion.button>
-                {drawnTeams.length > 0 && (
-                  <motion.button 
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    onClick={() => setDrawnTeams([])}
-                    className="text-[11px] font-bold text-text-secondary uppercase tracking-widest bg-bg-secondary px-4 py-2 rounded-none border border-border/50 active:scale-95 transition-all"
+            {activeTab === 'placar' ? (
+              <div className="flex-1 flex flex-col gap-6 min-h-0">
+                <div className="flex justify-between items-center px-1">
+                  <h3 className="text-xs font-bold text-text-primary uppercase tracking-[0.2em]">{t.historico}</h3>
+                  <motion.button
+                    className="p-2 bg-accent/10 text-accent rounded-none shadow-none flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest active:scale-95 transition-transform border border-accent/20"
+                    onClick={shareHistory}
                   >
-                    {t.limparSorteio}
+                    <Copy className="w-3.5 h-3.5" />
+                    {t.copiar}
                   </motion.button>
-                )}
-              </div>
-            </div>
-
-            {/* Add Player Form */}
-            <div className="glass-card rounded-none p-4 flex flex-col gap-3 mx-1">
-              <div className="flex gap-2 items-center">
-                <input 
-                  type="text"
-                  maxLength={30}
-                  placeholder={`${t.nomeJogador}, ${t.numeroJogador || 'Nº'}`}
-                  className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-none px-4 py-3 text-sm font-semibold text-text-primary outline-accent placeholder:text-text-secondary/40"
-                  value={newPlayerName}
-                  onChange={(e) => setNewPlayerName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
-                />
-                <motion.button
-                  className="w-12 h-12 bg-accent text-white rounded-none shadow-none flex items-center justify-center shrink-0 active:scale-95 transition-transform"
-                  onClick={addPlayer}
-                >
-                  <Plus className="w-6 h-6" />
-                </motion.button>
-              </div>
-            </div>
-
-            {/* Players Selection Badges */}
-            <div className="space-y-6 px-1">
-              {drawnTeams.length > 0 ? (
-                drawnTeams.map((team, teamIdx) => (
-                  <div key={teamIdx} className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="h-1 w-4 bg-accent rounded-none" />
-                      <h3 className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em]">
-                        {t.equipe} {String.fromCharCode(65 + teamIdx)}
-                      </h3>
+                </div>
+                <div className="flex-1 glass-card p-4 overflow-y-auto no-scrollbar flex flex-col border-dashed">
+                  {history.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-text-secondary gap-4 opacity-40 py-10">
+                      <div className="w-12 h-12 bg-bg-secondary rounded-none flex items-center justify-center border border-border">
+                        <History className="w-6 h-6 opacity-30 text-accent" />
+                      </div>
+                      <p className="text-xs font-medium tracking-tight">{t.nenhumaAcao}</p>
                     </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {history.map((action, idx) => (
+                        action.type === 'separator' ? (
+                          <div key={action.id} className="flex items-center gap-4 py-4 px-1">
+                            <div className="flex-1 h-px bg-white/10"></div>
+                            <span className="text-[9px] font-black text-accent uppercase tracking-[0.3em] px-2">{action.description}</span>
+                            <div className="flex-1 h-px bg-white/10"></div>
+                          </div>
+                        ) : (
+                        <motion.div 
+                          key={action.id} 
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.02 }}
+                          className="flex items-center gap-3 group p-1"
+                        >
+                          <div className="text-[9px] font-display text-text-secondary w-14 tabular-nums opacity-60">
+                            {new Date(action.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </div>
+                          <div className="flex-1 flex items-center justify-between gap-2">
+                            <div>
+                              <p className="text-[11px] font-semibold text-text-primary tracking-tight leading-loose">{action.description}</p>
+                              <p className="text-[9px] font-bold text-accent mt-0.5 uppercase tracking-widest leading-none">
+                                {action.state.homeScore} — {action.state.visitorScore}
+                              </p>
+                            </div>
+                            <div className="w-1 h-1 rounded-none bg-border group-hover:bg-accent transition-colors shrink-0" />
+                          </div>
+                        </motion.div>
+                        )
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center px-1">
+                  <div className="flex gap-2 ml-auto">
+                    <motion.button 
+                      onClick={handleDraft}
+                      className="text-[11px] font-bold text-accent uppercase tracking-widest bg-accent/10 px-4 py-2 rounded-none border border-accent/20 active:scale-95 transition-all flex items-center gap-2"
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      {t.sorteio}
+                    </motion.button>
+                    {drawnTeams.length > 0 && (
+                      <motion.button 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        onClick={() => setDrawnTeams([])}
+                        className="text-[11px] font-bold text-text-secondary uppercase tracking-widest bg-bg-secondary px-4 py-2 rounded-none border border-border/50 active:scale-95 transition-all"
+                      >
+                        {t.limparSorteio}
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Add Player Form */}
+                <div className="glass-card rounded-none p-4 flex flex-col gap-3 mx-1">
+                  <div className="flex gap-2 items-center">
+                    <input 
+                      type="text"
+                      maxLength={30}
+                      placeholder={`${t.nomeJogador}, ${t.numeroJogador || 'Nº'}`}
+                      className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-none px-4 py-3 text-sm font-semibold text-text-primary outline-accent placeholder:text-text-secondary/40"
+                      value={newPlayerName}
+                      onChange={(e) => setNewPlayerName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
+                    />
+                    <motion.button
+                      className="w-12 h-12 bg-accent text-white rounded-none shadow-none flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+                      onClick={addPlayer}
+                    >
+                      <Plus className="w-6 h-6" />
+                    </motion.button>
+                  </div>
+                </div>
+
+                {/* Players Selection Badges */}
+                <div className="space-y-6 px-1">
+                  {drawnTeams.length > 0 ? (
+                    drawnTeams.map((team, teamIdx) => (
+                      <div key={teamIdx} className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1 w-4 bg-accent rounded-none" />
+                          <h3 className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em]">
+                            {t.equipe} {String.fromCharCode(65 + teamIdx)}
+                          </h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2.5">
+                          {team.map(player => (
+                            <PlayerBadge 
+                              key={player.id}
+                              player={player}
+                              isSelected={selectedPlayerId === player.id}
+                              onClick={() => setSelectedPlayerId(player.id)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
                     <div className="flex flex-wrap gap-2.5">
-                      {team.map(player => (
+                      {players.map(player => (
                         <PlayerBadge 
                           key={player.id}
                           player={player}
@@ -1427,41 +1498,30 @@ export default function App() {
                         />
                       ))}
                     </div>
-                  </div>
-                ))
-              ) : (
-                <div className="flex flex-wrap gap-2.5">
-                  {players.map(player => (
-                    <PlayerBadge 
-                      key={player.id}
-                      player={player}
-                      isSelected={selectedPlayerId === player.id}
-                      onClick={() => setSelectedPlayerId(player.id)}
-                    />
-                  ))}
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Selected Player Card */}
-            <div className="pb-8">
-              {selectedPlayerId && players.find(p => p.id === selectedPlayerId) ? (
-                <PlayerStatCard 
-                  player={players.find(p => p.id === selectedPlayerId)} 
-                  gameMode={gameMode} 
-                  t={t} 
-                  updatePlayerStat={updatePlayerStat} 
-                  removePlayer={removePlayer} 
-                />
-              ) : players.length > 0 ? (
-                <div className="h-48 glass-card flex flex-col items-center justify-center text-text-secondary text-sm font-medium border-dashed border-white/20 gap-4">
-                  <div className="w-12 h-12 bg-bg-secondary rounded-none flex items-center justify-center border border-border">
-                    <Dribbble className="w-6 h-6 opacity-30 animate-pulse text-accent" />
-                  </div>
-                  <p className="tracking-tight">Selecione um jogador acima</p>
+                {/* Selected Player Card */}
+                <div className="pb-8 overflow-y-visible">
+                  {selectedPlayerId && players.find(p => p.id === selectedPlayerId) ? (
+                    <PlayerStatCard 
+                      player={players.find(p => p.id === selectedPlayerId)} 
+                      gameMode={gameMode} 
+                      t={t} 
+                      updatePlayerStat={updatePlayerStat} 
+                      removePlayer={removePlayer} 
+                    />
+                  ) : players.length > 0 ? (
+                    <div className="h-48 glass-card flex flex-col items-center justify-center text-text-secondary text-sm font-medium border-dashed border-white/20 gap-4">
+                      <div className="w-12 h-12 bg-bg-secondary rounded-none flex items-center justify-center border border-border">
+                        <Dribbble className="w-6 h-6 opacity-30 animate-pulse text-accent" />
+                      </div>
+                      <p className="tracking-tight">Selecione um jogador acima</p>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
+              </>
+            )}
           </div>
 
           {/* Campeonato Tab (Standalone) */}
@@ -1573,7 +1633,7 @@ export default function App() {
                       onClick={drawTournamentMatches}
                       className="text-[9px] font-bold text-accent border border-accent/20 bg-accent/5 px-4 py-2 uppercase tracking-widest hover:bg-accent/10 transition-all"
                     >
-                      {t.sortearJogos}
+                      {t.sortear}
                     </button>
                     <button 
                       onClick={() => setShowTournamentResetConfirm(true)}
@@ -1699,13 +1759,14 @@ export default function App() {
 
           {/* Historico Tab (Standalone) */}
           {activeTab === 'historico' && (
-          <div className="flex-1 flex flex-col gap-6 min-h-0 mb-4 pb-20">
-            <div className="flex justify-end items-center px-1">
+          <div className="flex-1 flex flex-col gap-6 min-h-0 mb-4 pb-20 lg:max-w-4xl lg:mx-auto lg:w-full">
+            <div className="flex justify-between items-center px-1">
+              <h2 className="text-xl font-display font-bold text-white tracking-[0.2em] uppercase hidden lg:block">{t.historico}</h2>
               <motion.button
-                className="p-3 bg-accent text-white rounded-none shadow-none flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest active:scale-95 transition-transform"
+                className="p-3 bg-accent text-white rounded-none shadow-none flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest active:scale-95 transition-transform ml-auto"
                 onClick={shareHistory}
               >
-                <Copy className="w-4 h-4" />
+                <History className="w-4 h-4" />
                 {t.copiar}
               </motion.button>
             </div>
@@ -2258,7 +2319,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
             <input 
               autoFocus
               maxLength={12}
-              className="w-full text-center bg-slate-900/50 rounded-none text-xs font-bold text-text-primary py-2 px-3 outline-none border border-border uppercase"
+              className="w-full text-center bg-white/5 rounded-none text-lg font-display font-black text-text-primary py-2 px-3 outline-none border-b border-white/20 uppercase"
               value={tempName || ''}
               onChange={(e) => setTempName(e.target.value)}
               onBlur={handleSave}
@@ -2267,7 +2328,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
           </div>
         ) : (
           <motion.button 
-            className={`min-w-[110px] sm:min-w-[120px] px-3 py-1.5 rounded-none bg-slate-900/40 border border-border text-[11px] font-bold tracking-widest uppercase ${textColor} truncate`}
+            className={`w-full px-2 py-0.5 bg-transparent border-none text-lg sm:text-xl font-display font-black tracking-[0.1em] uppercase ${textColor} truncate active:opacity-70 transition-opacity`}
             onClick={() => setIsEditing(true)}
             whileTap={{ scale: 0.95 }}
           >
@@ -2359,13 +2420,13 @@ function PlayerBadge({ player, isSelected, onClick }: any) {
     <motion.button
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className={`px-4 py-2 rounded-none text-[11px] font-bold transition-all flex items-center gap-3 border shadow-none ${
+      className={`px-2 py-1 rounded-none text-[10px] font-bold transition-all flex items-center gap-2 border shadow-none ${
         isSelected 
           ? 'bg-accent text-white border-accent' 
           : 'bg-white/[0.04] text-text-primary border-white/10 hover:border-accent/40'
       }`}
     >
-      <span className={`w-6 h-6 rounded-none flex items-center justify-center text-[10px] font-display font-bold ${isSelected ? 'bg-white/20 text-white' : 'bg-bg-card shadow-none text-accent'}`}>
+      <span className={`w-5 h-5 rounded-none flex items-center justify-center text-[9px] font-display font-bold ${isSelected ? 'bg-black/60 text-white' : 'bg-bg-card shadow-none text-accent'}`}>
         {player.number || '00'}
       </span>
       <span className="tracking-tight">{player.name}</span>

@@ -1595,7 +1595,7 @@ export default function App() {
                 <div className="flex gap-2">
                   <input 
                     type="text"
-                    maxLength={16}
+                    maxLength={20}
                     placeholder={t.adicionarTime}
                     className="flex-1 bg-white/5 border border-white/10 rounded-none px-4 py-2 text-xs font-semibold text-text-primary outline-accent"
                     onKeyDown={(e) => {
@@ -1622,7 +1622,7 @@ export default function App() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {tournamentTeams.map(team => (
                     <div key={team.id} className="bg-white/5 border border-white/5 p-2 flex items-center justify-between group">
-                      <span className="text-[10px] font-bold uppercase tracking-widest truncate max-w-[80px]">{team.name}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest truncate flex-1 pr-2">{team.name}</span>
                       <button onClick={() => removeTournamentTeam(team.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-red-500 hover:bg-red-500/10"><X className="w-3 h-3" /></button>
                     </div>
                   ))}
@@ -1679,7 +1679,7 @@ export default function App() {
                                 {calculateGroupStandings(groupName as 'A' | 'B', tournamentMatches).map((team, idx) => (
                                   <tr key={team.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                                     <td className="py-3 text-[10px] font-bold text-text-secondary pr-4">{idx + 1}</td>
-                                    <td className="py-3 text-[10px] font-bold text-text-primary uppercase tracking-widest truncate max-w-[100px]">{team.name}</td>
+                                    <td className="py-3 text-[10px] font-bold text-text-primary uppercase tracking-widest truncate max-w-[140px]">{team.name}</td>
                                     <td className="py-3 text-[10px] font-display font-medium text-center">{team.played}</td>
                                     <td className="py-3 text-[10px] font-display font-medium text-center text-green-500">{team.won}</td>
                                     <td className="py-3 text-[10px] font-display font-medium text-center text-blue-400">{team.draw}</td>
@@ -2326,7 +2326,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
           <div className="flex gap-1 w-full">
             <input 
               autoFocus
-              maxLength={16}
+              maxLength={20}
               className="w-full text-center bg-white/5 rounded-none text-lg font-display font-black text-text-primary py-2 px-3 outline-none border-b border-white/20 uppercase"
               value={tempName || ''}
               onChange={(e) => setTempName(e.target.value)}

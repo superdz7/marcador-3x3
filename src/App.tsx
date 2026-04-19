@@ -853,7 +853,7 @@ export default function App() {
           >
             {activeTab === 'placar' ? t.placar : 
              activeTab === 'estatisticas' ? t.estatisticas : 
-             activeTab === 'historico' ? t.historicoPartida : 
+             activeTab === 'historico' ? t.historico : 
              t.configuracoes}
           </motion.div>
         </div>
@@ -1403,7 +1403,7 @@ export default function App() {
 
               <div className="flex-1 flex flex-col gap-3">
                 <MenuItem 
-                  icon={<LayoutGrid className="w-5 h-5" />} 
+                  icon={<Dribbble className="w-5 h-5" />} 
                   label={t.placar} 
                   active={activeTab === 'placar'} 
                   onClick={() => { setActiveTab('placar'); setIsMenuOpen(false); }} 
@@ -1416,7 +1416,7 @@ export default function App() {
                 />
                 <MenuItem 
                   icon={<History className="w-5 h-5" />} 
-                  label={t.historicoPartida} 
+                  label={t.historico} 
                   active={activeTab === 'historico'} 
                   onClick={() => { setActiveTab('historico'); setIsMenuOpen(false); }} 
                 />
@@ -1440,27 +1440,23 @@ export default function App() {
       <nav className="fixed bottom-0 left-0 right-0 lg:hidden glass-nav px-4 pb-2 pt-1 flex justify-between items-center z-50">
         <NavButton 
           active={activeTab === 'placar'} 
-          onClick={() => setActiveTab('placar')}
-          icon={<LayoutGrid className="w-5 h-5" />}
-          label={t.placar}
+          onClick={() => { setActiveTab('placar'); setIsMenuOpen(false); }}
+          icon={<Dribbble className="w-5 h-5" />}
         />
         <NavButton 
           active={activeTab === 'estatisticas'} 
-          onClick={() => setActiveTab('estatisticas')}
+          onClick={() => { setActiveTab('estatisticas'); setIsMenuOpen(false); }}
           icon={<BarChart3 className="w-5 h-5" />}
-          label={t.estatisticas}
         />
         <NavButton 
           active={activeTab === 'historico'} 
-          onClick={() => setActiveTab('historico')}
+          onClick={() => { setActiveTab('historico'); setIsMenuOpen(false); }}
           icon={<History className="w-5 h-5" />}
-          label={t.historico}
         />
         <NavButton 
           active={activeTab === 'opcoes'} 
-          onClick={() => setActiveTab('opcoes')}
+          onClick={() => { setActiveTab('opcoes'); setIsMenuOpen(false); }}
           icon={<Settings className="w-5 h-5" />}
-          label={t.configuracoes}
         />
       </nav>
     </div>
@@ -1834,18 +1830,15 @@ function MenuItem({ icon, label, active, onClick }: any) {
   );
 }
 
-function NavButton({ active, onClick, icon, label }: any) {
+function NavButton({ active, onClick, icon }: any) {
   return (
     <button 
-      className="flex-1 flex flex-col items-center gap-0.5 group py-2 relative"
+      className="flex-1 flex flex-col items-center justify-center gap-0.5 group py-3 relative min-h-[56px]"
       onClick={onClick}
     >
-      <div className={`p-1 rounded-none transition-all duration-300 relative z-10 ${active ? 'text-accent scale-110' : 'text-text-secondary group-hover:text-accent/70'}`}>
-        {React.cloneElement(icon as React.ReactElement, { className: 'w-4 h-4' })}
+      <div className={`transition-all duration-300 relative z-10 ${active ? 'text-accent scale-125' : 'text-text-secondary group-hover:text-accent/70'}`}>
+        {React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6' })}
       </div>
-      <span className={`text-[9px] font-black tracking-tighter z-10 uppercase ${active ? 'text-accent' : 'text-text-secondary'}`}>
-        {label}
-      </span>
       {active && (
         <>
           <motion.div 

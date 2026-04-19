@@ -109,7 +109,7 @@ interface TournamentSettings {
 const MODES = {
   '3x3': { gameTime: 600, shotClock: 12, label: '3x3' },
   'fiba': { gameTime: 600, shotClock: 24, label: 'FIBA' },
-  'nba': { gameTime: 720, shotClock: 12, label: 'NBA' }, // User requested 12s for NBA
+  'nba': { gameTime: 720, shotClock: 24, label: 'NBA' },
 };
 
 const TRANSLATIONS: any = {
@@ -145,6 +145,7 @@ const TRANSLATIONS: any = {
     modoJogo: 'Modo de Jogo',
     telaSempreLigada: 'Manter tela ligada',
     confirmarReiniciar: 'Deseja reiniciar o placar?',
+    confirmarReiniciarCampeonato: 'Deseja reiniciar o campeonato? Todos os times e jogos serão apagados.',
     iniciar: 'Iniciar',
     pausar: 'Pausar',
     inicioPartida: 'Início da Partida',
@@ -237,6 +238,7 @@ const TRANSLATIONS: any = {
     modoJogo: 'Game Mode',
     telaSempreLigada: 'Keep screen on',
     confirmarReiniciar: 'Do you want to reset the scoreboard?',
+    confirmarReiniciarCampeonato: 'Restart tournament? All teams and matches will be deleted.',
     iniciar: 'Start',
     pausar: 'Pause',
     inicioPartida: 'Game Started',
@@ -327,6 +329,7 @@ const TRANSLATIONS: any = {
     modoJogo: 'Modo de Juego',
     telaSempreLigada: 'Mantener pantalla encendida',
     confirmarReiniciar: '¿Desea reiniciar el marcador?',
+    confirmarReiniciarCampeonato: '¿Reiniciar campeonato? Se borrarán todos los equipos y juegos.',
     iniciar: 'Iniciar',
     pausar: 'Pausar',
     inicioPartida: 'Inicio del Partido',
@@ -412,10 +415,7 @@ export default function App() {
     const saved = localStorage.getItem('bt_players');
     return saved ? JSON.parse(saved) : [];
   });
-  const [history, setHistory] = useState<HistoryAction[]>(() => {
-    const saved = localStorage.getItem('bt_history');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [history, setHistory] = useState<HistoryAction[]>([]);
   const [homeScore, setHomeScore] = useState(() => {
     const s = localStorage.getItem('bt_homeScore');
     return s !== null ? Number(s) : 0;
@@ -444,6 +444,7 @@ export default function App() {
   const [visitorName, setVisitorName] = useState(() => localStorage.getItem('bt_visitorName') || 'BULLS');
   
   const [isRunning, setIsRunning] = useState(false);
+  const [showTournamentResetConfirm, setShowTournamentResetConfirm] = useState(false);
   
   // Tournament State
   const [tournamentTeams, setTournamentTeams] = useState<TournamentTeam[]>(() => {
@@ -529,7 +530,7 @@ export default function App() {
       },
       description: safeDescription,
     };
-    setHistory(prev => [newAction, ...prev].slice(0, 100));
+    setHistory(prev => [newAction, ...prev].slice(0, 1000));
   }, [gameTime, shotClock, homeScore, visitorScore, homeFouls, visitorFouls]);
 
   const shareHistory = () => {
@@ -575,6 +576,18 @@ export default function App() {
   };
 
   const resetGame = () => {
+    // Add separator to history if there's already some history
+    if (history.length > 0) {
+        const separatorAction: HistoryAction = {
+            id: `sep-${Date.now()}`,
+            timestamp: Date.now(),
+            type: 'separator',
+            state: { gameTime, shotClock, homeScore, visitorScore, homeFouls, visitorFouls },
+            description: `--- ${homeName} ${homeScore} x ${visitorScore} ${visitorName} ---`
+        };
+        setHistory(prev => [separatorAction, ...prev].slice(0, 1000));
+    }
+
     const mode = MODES[gameMode];
     setGameTime(mode.gameTime);
     setShotClock(mode.shotClock);
@@ -585,7 +598,6 @@ export default function App() {
     setHomeName('BE CITY');
     setVisitorName('BULLS');
     setIsRunning(false);
-    setHistory([]);
     // Reset player stats instead of clearing the list
     setPlayers(prev => prev.map(p => ({
       ...p,
@@ -858,6 +870,14 @@ export default function App() {
     return stats.sort((a, b) => b.points - a.points || (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst));
   };
 
+  const resetTournament = () => {
+    setTournamentTeams([]);
+    setTournamentMatches([]);
+    setTournamentSettings({ name: '', organizer: '', date: '' });
+    setShowTournamentResetConfirm(false);
+    setToast({ message: language === 'pt' ? 'Campeonato reiniciado' : 'Tournament reset', type: 'info' });
+  };
+
   const transferToScoreboard = (match: TournamentMatch) => {
     if (!match.homeTeamId || !match.visitorTeamId) {
         setToast({ message: language === 'pt' ? 'Os times ainda não foram definidos para este jogo' : 'Teams are not yet defined for this match', type: 'error' });
@@ -875,7 +895,7 @@ export default function App() {
             state: { gameTime, shotClock, homeScore, visitorScore, homeFouls, visitorFouls },
             description: `--- ${home.name} x ${visitor.name} ---`
         };
-        setHistory(prev => [separatorAction, ...prev].slice(0, 100));
+        setHistory(prev => [separatorAction, ...prev].slice(0, 1000));
 
         setHomeName(home.name);
         setVisitorName(visitor.name);
@@ -917,7 +937,7 @@ export default function App() {
       setVisitorScore(prev => Math.min(limit, prev + amount));
     }
     // Reset shot clock on score
-    setShotClock(MODES[gameMode].shotClock);
+    setShotClock(gameMode === '3x3' ? 12 : 24);
   };
 
   const updateFouls = (team: Team) => {
@@ -1236,15 +1256,27 @@ export default function App() {
               </motion.div>
 
               {/* Shot Clock */}
-              <motion.div 
-                className="flex-[1.2] glass-card flex flex-col items-center justify-center relative cursor-pointer active:scale-95 transition-transform overflow-hidden"
-                onClick={() => setShotClock(gameMode === '3x3' ? 12 : 24)}
-              >
-                <span className="text-[11px] font-bold text-text-secondary uppercase tracking-[0.15em] absolute top-3 leading-none z-10">{t.posse}</span>
-                <div className={`text-5xl font-display font-bold ${shotClock <= 3 && shotClock > 0 ? 'text-red-500 animate-pulse' : 'text-accent-green text-glow-green'} mt-7 text-digit relative z-10 leading-none`}>
-                  {shotClock.toString().padStart(2, '0')}
-                </div>
-              </motion.div>
+              <div className="flex-[1.2] flex flex-col gap-2">
+                <motion.div 
+                  className="w-full flex-1 glass-card flex flex-col items-center justify-center relative cursor-pointer active:scale-95 transition-transform overflow-hidden"
+                  onClick={() => setShotClock(gameMode === '3x3' ? 12 : 14)}
+                >
+                  <span className="text-[11px] font-bold text-text-secondary uppercase tracking-[0.15em] absolute top-3 leading-none z-10">{t.posse}</span>
+                  <div className={`text-5xl font-display font-bold ${shotClock <= 3 && shotClock > 0 ? 'text-red-500 animate-pulse' : 'text-accent-green text-glow-green'} mt-7 text-digit relative z-10 leading-none`}>
+                    {shotClock.toString().padStart(2, '0')}
+                  </div>
+                </motion.div>
+                
+                {(gameMode === 'fiba' || gameMode === 'nba') && (
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShotClock(24)}
+                    className="w-full py-1.5 bg-accent/10 border border-accent/20 text-accent text-[9px] font-black uppercase tracking-widest shadow-lg shadow-accent/5"
+                  >
+                    24s
+                  </motion.button>
+                )}
+              </div>
             </div>
 
             {/* Teams Row */}
@@ -1536,12 +1568,20 @@ export default function App() {
                     <Medal className="w-4 h-4 text-accent-green" />
                     <h3 className="text-xs font-bold text-text-primary uppercase tracking-[0.15em]">{t.campeonato}</h3>
                   </div>
-                  <button 
-                    onClick={drawTournamentMatches}
-                    className="text-[9px] font-bold text-accent border border-accent/20 bg-accent/5 px-4 py-2 uppercase tracking-widest hover:bg-accent/10 transition-all"
-                  >
-                    {t.sortearJogos}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={drawTournamentMatches}
+                      className="text-[9px] font-bold text-accent border border-accent/20 bg-accent/5 px-4 py-2 uppercase tracking-widest hover:bg-accent/10 transition-all"
+                    >
+                      {t.sortearJogos}
+                    </button>
+                    <button 
+                      onClick={() => setShowTournamentResetConfirm(true)}
+                      className="text-[9px] font-bold text-red-500 border border-red-500/20 bg-red-500/5 px-4 py-2 uppercase tracking-widest hover:bg-red-500/10 transition-all"
+                    >
+                      {language === 'pt' ? 'Reiniciar' : 'Reset'}
+                    </button>
+                  </div>
                 </div>
 
                 {tournamentMatches.length > 0 && (
@@ -1891,6 +1931,19 @@ export default function App() {
             message={t.confirmarReiniciar}
             onConfirm={resetGame}
             onCancel={() => setShowResetConfirm(false)}
+            t={t}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Tournament Reset Confirmation Modal */}
+      <AnimatePresence>
+        {showTournamentResetConfirm && (
+          <ConfirmModal 
+            title={t.campeonato}
+            message={t.confirmarReiniciarCampeonato}
+            onConfirm={resetTournament}
+            onCancel={() => setShowTournamentResetConfirm(false)}
             t={t}
           />
         )}

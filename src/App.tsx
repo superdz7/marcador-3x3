@@ -1249,6 +1249,14 @@ export default function App() {
                   }
                 }}
               >
+                {isRunning && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [1, 0.4, 1] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                    className="absolute top-3.5 left-4 w-2 h-2 rounded-full bg-accent-blue shadow-[0_0_8px_rgba(0,210,255,0.6)] z-20"
+                  />
+                )}
                 <span className="text-[11px] font-bold text-text-secondary uppercase tracking-[0.15em] absolute top-3">{t.tempoJogo}</span>
                 <div className="text-6xl sm:text-7xl font-display font-bold text-accent-blue text-glow-blue tracking-normal mt-7 leading-none text-digit">
                   {formatTime(gameTime)}

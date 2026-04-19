@@ -203,6 +203,10 @@ const TRANSLATIONS: any = {
     iniciarJogoNoPlacar: 'Iniciar no Placar',
     p: 'P',
     pj: 'PJ',
+    v: 'V',
+    e: 'E',
+    d: 'D',
+    pf: 'PF',
     quartas: 'Quartas de Final',
     semifinais: 'Semifinais',
     final: 'Final',
@@ -299,6 +303,10 @@ const TRANSLATIONS: any = {
     iniciarJogoNoPlacar: 'Start on Scoreboard',
     p: 'P',
     pj: 'GP',
+    v: 'W',
+    e: 'D',
+    d: 'L',
+    pf: 'PF',
     quartas: 'Quarter-finals',
     semifinais: 'Semi-finals',
     final: 'Final',
@@ -807,10 +815,10 @@ export default function App() {
     setTournamentMatches(matches);
   };
 
-  const updateMatchResult = (matchId: string, homeScore: number, visitorScore: number) => {
+  const updateMatchResult = (matchId: string, hScore: number, vScore: number) => {
     let updatedMatches = tournamentMatches.map(m => {
         if (m.id === matchId) {
-            return { ...m, homeScore, visitorScore, status: 'finished' };
+            return { ...m, homeScore: hScore, visitorScore: vScore, status: 'finished' };
         }
         return m;
     });
@@ -825,36 +833,35 @@ export default function App() {
         const allGroupADone = groupAMatches.every(m => m.status === 'finished');
         const allGroupBDone = groupBMatches.every(m => m.status === 'finished');
 
-        if (allGroupADone || allGroupBDone) {
+        if (allGroupADone && allGroupBDone) {
             // Recalculate standings for groups to fill Semi-Finals
             const teamsA = calculateGroupStandings('A', updatedMatches);
             const teamsB = calculateGroupStandings('B', updatedMatches);
 
-            if (allGroupADone && allGroupBDone) {
-                updatedMatches = updatedMatches.map(m => {
-                    if (m.id === 'S1') return { ...m, homeTeamId: teamsA[0].id, visitorTeamId: teamsB[1].id };
-                    if (m.id === 'S2') return { ...m, homeTeamId: teamsB[0].id, visitorTeamId: teamsA[1].id };
-                    return m;
-                });
-            }
+            updatedMatches = updatedMatches.map(m => {
+                if (m.id === 'S1') return { ...m, homeTeamId: teamsA[0].id, visitorTeamId: teamsB[1].id };
+                if (m.id === 'S2') return { ...m, homeTeamId: teamsB[0].id, visitorTeamId: teamsA[1].id };
+                return m;
+            });
         }
     } else if (finishedMatch.round === 'semis') {
-        const winnerId = finishedMatch.homeScore > finishedMatch.visitorScore ? finishedMatch.homeTeamId : finishedMatch.visitorTeamId;
-        const loserId = finishedMatch.homeScore > finishedMatch.visitorScore ? finishedMatch.visitorTeamId : finishedMatch.homeTeamId;
+        const hId = finishedMatch.homeTeamId;
+        const vId = finishedMatch.visitorTeamId;
+        const winnerId = hScore > vScore ? hId : vId;
+        const loserId = hScore > vScore ? vId : hId;
 
-        const finalMatch = updatedMatches.find(m => m.id === 'F1')!;
-        const thirdMatch = updatedMatches.find(m => m.id === 'T1')!;
-        
-        if (finishedMatch.matchNumber === 1) {
-            finalMatch.homeTeamId = winnerId;
-            thirdMatch.homeTeamId = loserId;
-        } else {
-            finalMatch.visitorTeamId = winnerId;
-            thirdMatch.visitorTeamId = loserId;
-        }
+        updatedMatches = updatedMatches.map(m => {
+            if (m.id === 'F1') {
+                return { ...m, [finishedMatch.matchNumber === 1 ? 'homeTeamId' : 'visitorTeamId']: winnerId };
+            }
+            if (m.id === 'T1') {
+                return { ...m, [finishedMatch.matchNumber === 1 ? 'homeTeamId' : 'visitorTeamId']: loserId };
+            }
+            return m;
+        });
     }
 
-    setTournamentMatches([...updatedMatches]);
+    setTournamentMatches(updatedMatches);
   };
 
   const calculateGroupStandings = (group: 'A' | 'B', matches: TournamentMatch[]) => {
@@ -878,12 +885,24 @@ export default function App() {
                 s.points += 1;
             } else {
                 s.lost++;
+                // In some basketball formats, a loss earns 1 point? 
+                // But traditionally in many amateur tournaments it's 2 for win, 0 for loss.
+                // If draw is removed, we'll keep 2/0 normally unless requested.
             }
         });
         return s;
     });
 
-    return stats.sort((a, b) => b.points - a.points || (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst));
+    return stats.sort((a, b) => {
+        // 1. Points
+        if (b.points !== a.points) return b.points - a.points;
+        // 2. Saldo (Point Difference)
+        const diffA = a.pointsFor - a.pointsAgainst;
+        const diffB = b.pointsFor - b.pointsAgainst;
+        if (diffB !== diffA) return diffB - diffA;
+        // 3. Attack (Total Points For)
+        return b.pointsFor - a.pointsFor;
+    });
   };
 
   const resetTournament = () => {
@@ -933,20 +952,10 @@ export default function App() {
 
   const updateTournamentScore = () => {
     if (!activeTournamentMatchId) return;
-
-    setTournamentMatches(prev => prev.map(match => {
-      if (match.id === activeTournamentMatchId) {
-        return {
-          ...match,
-          homeScore,
-          visitorScore,
-          status: 'finished'
-        };
-      }
-      return match;
-    }));
-
+    updateMatchResult(activeTournamentMatchId, homeScore, visitorScore);
     setToast({ message: t.placarAtualizado, type: 'success' });
+    setActiveTab('campeonato');
+    setActiveTournamentMatchId(null);
   };
 
   const shareTeams = () => {
@@ -1718,9 +1727,10 @@ export default function App() {
                                 <tr className="border-b border-white/10">
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest">#</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest">{t.equipe}</th>
+                                  <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.pf || 'PF'}</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.pj}</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.vitorias}</th>
-                                  <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">E</th>
+                                  <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.derrotas || 'D'}</th>
                                   <th className="pb-3 text-[9px] font-bold text-accent uppercase tracking-widest text-center">{t.pontos}</th>
                                 </tr>
                               </thead>
@@ -1729,9 +1739,10 @@ export default function App() {
                                   <tr key={team.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                                     <td className="py-3 text-[10px] font-bold text-text-secondary pr-4">{idx + 1}</td>
                                     <td className="py-3 text-[10px] font-bold text-text-primary uppercase tracking-widest truncate max-w-[140px]">{team.name}</td>
+                                    <td className="py-3 text-[10px] font-display font-medium text-center text-text-secondary">{team.pointsFor}</td>
                                     <td className="py-3 text-[10px] font-display font-medium text-center">{team.played}</td>
                                     <td className="py-3 text-[10px] font-display font-medium text-center text-green-500">{team.won}</td>
-                                    <td className="py-3 text-[10px] font-display font-medium text-center text-blue-400">{team.draw}</td>
+                                    <td className="py-3 text-[10px] font-display font-medium text-center text-red-400">{team.lost}</td>
                                     <td className="py-3 text-[10px] font-display font-bold text-center text-accent tabular-nums bg-accent/5">{team.points}</td>
                                   </tr>
                                 ))}

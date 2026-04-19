@@ -28,7 +28,12 @@ import {
   Palette,
   MonitorSmartphone,
   Users,
-  Menu
+  Menu,
+  Calendar,
+  User as UserIcon,
+  Shield,
+  Medal,
+  List
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -51,6 +56,7 @@ interface HistoryAction {
   timestamp: number;
   state: Omit<GameState, 'isRunning'>;
   description: string;
+  type: 'action' | 'separator';
 }
 
 interface Player {
@@ -66,6 +72,36 @@ interface Player {
     steals: number;
     blocks: number;
   };
+}
+
+interface TournamentTeam {
+  id: string;
+  name: string;
+  played: number;
+  won: number;
+  draw: number;
+  lost: number;
+  pointsFor: number;
+  pointsAgainst: number;
+  points: number; // Classification points
+  group: 'A' | 'B' | null;
+}
+
+interface TournamentMatch {
+  id: string;
+  homeTeamId: string | null;
+  visitorTeamId: string | null;
+  homeScore: number;
+  visitorScore: number;
+  status: 'pending' | 'finished';
+  round: 'group' | 'semis' | 'final' | 'third';
+  matchNumber: number;
+}
+
+interface TournamentSettings {
+  name: string;
+  organizer: string;
+  date: string;
 }
 
 // --- Constants ---
@@ -147,6 +183,27 @@ const TRANSLATIONS: any = {
     fechar: 'Fechar',
     limparSorteio: 'Limpar Sorteio',
     tempoNaoEditavel: 'O tempo só pode ser alterado antes do início do jogo.',
+    campeonato: 'Campeonato',
+    nomeCampeonato: 'Nome do Campeonato',
+    organizador: 'Organizador',
+    data: 'Data',
+    times: 'Times',
+    adicionarTime: 'Adicionar Time',
+    classificacao: 'Classificação',
+    jogos: 'Jogos',
+    pontos: 'PTS',
+    vitorias: 'V',
+    derrotas: 'D',
+    saldo: 'Saldo',
+    sortearJogos: 'Sortear Jogos',
+    iniciarJogoNoPlacar: 'Iniciar no Placar',
+    p: 'P',
+    pj: 'PJ',
+    quartas: 'Quartas de Final',
+    semifinais: 'Semifinais',
+    final: 'Final',
+    terceiroLugar: '3º Lugar',
+    vencedor: 'Vencedor',
   },
   en: {
     placar: 'SCOREBOARD',
@@ -218,6 +275,27 @@ const TRANSLATIONS: any = {
     fechar: 'Close',
     limparSorteio: 'Clear Draft',
     tempoNaoEditavel: 'Time can only be changed before the game starts.',
+    campeonato: 'Tournament',
+    nomeCampeonato: 'Tournament Name',
+    organizador: 'Organizer',
+    data: 'Date',
+    times: 'Teams',
+    adicionarTime: 'Add Team',
+    classificacao: 'Standings',
+    jogos: 'Matches',
+    pontos: 'PTS',
+    vitorias: 'W',
+    derrotas: 'L',
+    saldo: 'Diff',
+    sortearJogos: 'Draw Matches',
+    iniciarJogoNoPlacar: 'Start on Scoreboard',
+    p: 'P',
+    pj: 'GP',
+    quartas: 'Quarter-finals',
+    semifinais: 'Semi-finals',
+    final: 'Final',
+    terceiroLugar: '3rd Place',
+    vencedor: 'Winner',
   },
   es: {
     placar: 'MARCADOR',
@@ -287,6 +365,27 @@ const TRANSLATIONS: any = {
     fechar: 'Cerrar',
     limparSorteio: 'Limpiar Sorteo',
     tempoNaoEditavel: 'El tiempo solo se puede cambiar antes de que comience el juego.',
+    campeonato: 'CAMPEONATO',
+    nomeCampeonato: 'Nombre del Campeonato',
+    organizador: 'Organizador',
+    data: 'Fecha',
+    times: 'Equipos',
+    adicionarTime: 'Añadir Equipo',
+    classificacao: 'Clasificación',
+    jogos: 'Partidos',
+    pontos: 'PTS',
+    vitorias: 'V',
+    derrotas: 'D',
+    saldo: 'Dif',
+    sortearJogos: 'Sortear Partidos',
+    iniciarJogoNoPlacar: 'Iniciar en Marcador',
+    p: 'P',
+    pj: 'PJ',
+    quartas: 'Cuartos de Final',
+    semifinais: 'Semifinales',
+    final: 'Final',
+    terceiroLugar: '3º Lugar',
+    vencedor: 'Ganador',
   }
 };
 
@@ -345,7 +444,24 @@ export default function App() {
   const [visitorName, setVisitorName] = useState(() => localStorage.getItem('bt_visitorName') || 'BULLS');
   
   const [isRunning, setIsRunning] = useState(false);
-  const [activeTab, setActiveTab] = useState('placar');
+  
+  // Tournament State
+  const [tournamentTeams, setTournamentTeams] = useState<TournamentTeam[]>(() => {
+    const saved = localStorage.getItem('bt_tournamentTeams');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [tournamentMatches, setTournamentMatches] = useState<TournamentMatch[]>(() => {
+    const saved = localStorage.getItem('bt_tournamentMatches');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [tournamentSettings, setTournamentSettings] = useState<TournamentSettings>(() => {
+    const saved = localStorage.getItem('bt_tournamentSettings');
+    return saved ? JSON.parse(saved) : { name: '', organizer: '', date: '' };
+  });
+
+  const [activeTab, setActiveTab] = useState<'placar' | 'estatisticas' | 'historico' | 'opcoes' | 'campeonato'>(() => {
+    return (localStorage.getItem('bt_activeTab') as any) || 'placar';
+  });
   const [isEditingTime, setIsEditingTime] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showDraftModal, setShowDraftModal] = useState(false);
@@ -377,10 +493,14 @@ export default function App() {
       localStorage.setItem('bt_hasStarted', hasStarted.current.toString());
       localStorage.setItem('bt_language', language);
       localStorage.setItem('bt_gameMode', gameMode);
+      localStorage.setItem('bt_activeTab', activeTab);
+      localStorage.setItem('bt_tournamentTeams', JSON.stringify(tournamentTeams));
+      localStorage.setItem('bt_tournamentMatches', JSON.stringify(tournamentMatches));
+      localStorage.setItem('bt_tournamentSettings', JSON.stringify(tournamentSettings));
     } catch (e) {
       console.warn('Failed to save to localStorage', e);
     }
-  }, [players, history, homeScore, visitorScore, homeFouls, visitorFouls, gameTime, shotClock, homeName, visitorName, language, gameMode]);
+  }, [players, history, homeScore, visitorScore, homeFouls, visitorFouls, gameTime, shotClock, homeName, visitorName, language, gameMode, activeTab, tournamentTeams, tournamentMatches, tournamentSettings]);
 
   const t = TRANSLATIONS[language];
 
@@ -398,6 +518,7 @@ export default function App() {
     const newAction: HistoryAction = {
       id: Math.random().toString(36).substr(2, 9),
       timestamp: Date.now(),
+      type: 'action',
       state: {
         gameTime,
         shotClock,
@@ -568,6 +689,211 @@ export default function App() {
     setShowDraftModal(true);
   };
 
+  const addTournamentTeam = (name: string) => {
+    if (tournamentTeams.length >= 8) {
+      setToast({ message: language === 'pt' ? 'Máximo de 8 times atingido' : 'Max 8 teams reached', type: 'error' });
+      return;
+    }
+    if (!name.trim()) return;
+    
+    const newTeam: TournamentTeam = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: name.toUpperCase(),
+      played: 0,
+      won: 0,
+      draw: 0,
+      lost: 0,
+      pointsFor: 0,
+      pointsAgainst: 0,
+      points: 0,
+      group: null
+    };
+    setTournamentTeams(prev => [...prev, newTeam]);
+  };
+
+  const removeTournamentTeam = (id: string) => {
+    setTournamentTeams(prev => prev.filter(t => t.id !== id));
+    setTournamentMatches(prev => prev.filter(m => m.homeTeamId !== id && m.visitorTeamId !== id));
+  };
+
+  const drawTournamentMatches = () => {
+    if (tournamentTeams.length < 8) {
+        setToast({ message: language === 'pt' ? 'É necessário adicionar 8 times' : 'Need 8 teams to start', type: 'error' });
+        return;
+    }
+    
+    const shuffledTeams = [...tournamentTeams].sort(() => Math.random() - 0.5);
+    const groupA = shuffledTeams.slice(0, 4);
+    const groupB = shuffledTeams.slice(4, 8);
+
+    setTournamentTeams(prev => prev.map(t => {
+        if (groupA.find(ga => ga.id === t.id)) return { ...t, group: 'A' };
+        if (groupB.find(gb => gb.id === t.id)) return { ...t, group: 'B' };
+        return t;
+    }));
+
+    const matches: TournamentMatch[] = [];
+    
+    // Group A Matches
+    for (let i = 0; i < 4; i++) {
+        for (let j = i + 1; j < 4; j++) {
+            matches.push({
+                id: `GA-${i}${j}`,
+                homeTeamId: groupA[i].id,
+                visitorTeamId: groupA[j].id,
+                homeScore: 0,
+                visitorScore: 0,
+                status: 'pending',
+                round: 'group',
+                matchNumber: matches.length + 1
+            });
+        }
+    }
+
+    // Group B Matches
+    for (let i = 0; i < 4; i++) {
+        for (let j = i + 1; j < 4; j++) {
+            matches.push({
+                id: `GB-${i}${j}`,
+                homeTeamId: groupB[i].id,
+                visitorTeamId: groupB[j].id,
+                homeScore: 0,
+                visitorScore: 0,
+                status: 'pending',
+                round: 'group',
+                matchNumber: matches.length + 1
+            });
+        }
+    }
+    
+    // Semis (placeholders)
+    matches.push({ id: 'S1', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'semis', matchNumber: 1 });
+    matches.push({ id: 'S2', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'semis', matchNumber: 2 });
+    
+    // Final (placeholder)
+    matches.push({ id: 'F1', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'final', matchNumber: 1 });
+    
+    // 3rd Place (placeholder)
+    matches.push({ id: 'T1', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'third', matchNumber: 1 });
+
+    setTournamentMatches(matches);
+  };
+
+  const updateMatchResult = (matchId: string, homeScore: number, visitorScore: number) => {
+    let updatedMatches = tournamentMatches.map(m => {
+        if (m.id === matchId) {
+            return { ...m, homeScore, visitorScore, status: 'finished' };
+        }
+        return m;
+    });
+
+    const finishedMatch = updatedMatches.find(m => m.id === matchId)!;
+
+    // Logic for Group Advancement
+    if (finishedMatch.round === 'group') {
+        const groupAMatches = updatedMatches.filter(m => m.id.startsWith('GA-'));
+        const groupBMatches = updatedMatches.filter(m => m.id.startsWith('GB-'));
+        
+        const allGroupADone = groupAMatches.every(m => m.status === 'finished');
+        const allGroupBDone = groupBMatches.every(m => m.status === 'finished');
+
+        if (allGroupADone || allGroupBDone) {
+            // Recalculate standings for groups to fill Semi-Finals
+            const teamsA = calculateGroupStandings('A', updatedMatches);
+            const teamsB = calculateGroupStandings('B', updatedMatches);
+
+            if (allGroupADone && allGroupBDone) {
+                updatedMatches = updatedMatches.map(m => {
+                    if (m.id === 'S1') return { ...m, homeTeamId: teamsA[0].id, visitorTeamId: teamsB[1].id };
+                    if (m.id === 'S2') return { ...m, homeTeamId: teamsB[0].id, visitorTeamId: teamsA[1].id };
+                    return m;
+                });
+            }
+        }
+    } else if (finishedMatch.round === 'semis') {
+        const winnerId = finishedMatch.homeScore > finishedMatch.visitorScore ? finishedMatch.homeTeamId : finishedMatch.visitorTeamId;
+        const loserId = finishedMatch.homeScore > finishedMatch.visitorScore ? finishedMatch.visitorTeamId : finishedMatch.homeTeamId;
+
+        const finalMatch = updatedMatches.find(m => m.id === 'F1')!;
+        const thirdMatch = updatedMatches.find(m => m.id === 'T1')!;
+        
+        if (finishedMatch.matchNumber === 1) {
+            finalMatch.homeTeamId = winnerId;
+            thirdMatch.homeTeamId = loserId;
+        } else {
+            finalMatch.visitorTeamId = winnerId;
+            thirdMatch.visitorTeamId = loserId;
+        }
+    }
+
+    setTournamentMatches([...updatedMatches]);
+  };
+
+  const calculateGroupStandings = (group: 'A' | 'B', matches: TournamentMatch[]) => {
+    const groupTeams = tournamentTeams.filter(t => t.group === group);
+    const stats = groupTeams.map(team => {
+        const s = { ...team, played: 0, won: 0, draw: 0, lost: 0, pointsFor: 0, pointsAgainst: 0, points: 0 };
+        matches.filter(m => m.round === 'group' && m.status === 'finished' && (m.homeTeamId === team.id || m.visitorTeamId === team.id)).forEach(m => {
+            s.played++;
+            const isHome = m.homeTeamId === team.id;
+            const teamScore = isHome ? m.homeScore : m.visitorScore;
+            const oppScore = isHome ? m.visitorScore : m.homeScore;
+            
+            s.pointsFor += teamScore;
+            s.pointsAgainst += oppScore;
+            
+            if (teamScore > oppScore) {
+                s.won++;
+                s.points += 2;
+            } else if (teamScore === oppScore) {
+                s.draw++;
+                s.points += 1;
+            } else {
+                s.lost++;
+            }
+        });
+        return s;
+    });
+
+    return stats.sort((a, b) => b.points - a.points || (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst));
+  };
+
+  const transferToScoreboard = (match: TournamentMatch) => {
+    if (!match.homeTeamId || !match.visitorTeamId) {
+        setToast({ message: language === 'pt' ? 'Os times ainda não foram definidos para este jogo' : 'Teams are not yet defined for this match', type: 'error' });
+        return;
+    }
+    const home = tournamentTeams.find(t => t.id === match.homeTeamId);
+    const visitor = tournamentTeams.find(t => t.id === match.visitorTeamId);
+    
+    if (home && visitor) {
+        // Add separator to history
+        const separatorAction: HistoryAction = {
+            id: `sep-${Date.now()}`,
+            timestamp: Date.now(),
+            type: 'separator',
+            state: { gameTime, shotClock, homeScore, visitorScore, homeFouls, visitorFouls },
+            description: `--- ${home.name} x ${visitor.name} ---`
+        };
+        setHistory(prev => [separatorAction, ...prev].slice(0, 100));
+
+        setHomeName(home.name);
+        setVisitorName(visitor.name);
+        setHomeScore(match.homeScore);
+        setVisitorScore(match.visitorScore);
+        setHomeFouls(0);
+        setVisitorFouls(0);
+        setGameTime(MODES[gameMode].gameTime);
+        setShotClock(MODES[gameMode].shotClock);
+        setIsRunning(false);
+        setActiveTab('placar');
+        setToast({ 
+            message: language === 'pt' ? `Jogo carregado: ${home.name} x ${visitor.name}` : `Game loaded: ${home.name} x ${visitor.name}`, 
+            type: 'success' 
+        });
+    }
+  };
+
   const shareTeams = () => {
     const text = drawnTeams.map((team, idx) => {
       const teamLetter = String.fromCharCode(65 + idx);
@@ -575,6 +901,10 @@ export default function App() {
     }).join('\n\n');
 
     handleShare(text, t.equipes);
+  };
+
+  const getTournamentStandings = () => {
+    return tournamentTeams;
   };
 
   const updateScore = (team: Team, amount: number) => {
@@ -879,9 +1209,9 @@ export default function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className={`w-full flex-1 flex flex-col px-4 pt-2 pb-4 transition-all duration-300 mx-auto ${['placar', 'estatisticas'].includes(activeTab) ? 'max-w-7xl' : 'max-w-2xl'}`}>
+      <main className={`w-full flex-1 flex flex-col px-4 pt-2 pb-4 transition-all duration-300 mx-auto ${['placar', 'estatisticas', 'campeonato'].includes(activeTab) ? 'max-w-7xl' : 'max-w-2xl'}`}>
         {/* Layout Grid: Desktop 2 Columns / Mobile 1 Column */}
-        <div className={`flex-1 flex flex-col lg:grid lg:gap-8 lg:min-h-0 ${['placar', 'estatisticas'].includes(activeTab) ? 'lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px]' : 'lg:max-w-2xl mx-auto w-full'}`}>
+        <div className={`flex-1 flex flex-col lg:grid lg:gap-8 lg:min-h-0 ${['placar', 'estatisticas'].includes(activeTab) ? 'lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px]' : (activeTab === 'campeonato' ? 'w-full' : 'lg:max-w-2xl mx-auto w-full')}`}>
           
           {/* Column 1: Placar (Always visible on lg if activeTab is placar/stats) */}
           <div className={`flex-1 flex flex-col gap-4 lg:pb-12 ${activeTab === 'placar' ? 'flex' : (activeTab === 'estatisticas' ? 'hidden lg:flex' : 'hidden')}`}>
@@ -1102,6 +1432,231 @@ export default function App() {
             </div>
           </div>
 
+          {/* Campeonato Tab (Standalone) */}
+          {activeTab === 'campeonato' && (
+            <div className="flex-1 flex flex-col gap-6 min-h-0 mb-4 pb-20 overflow-y-auto no-scrollbar">
+              {/* Header Info */}
+              <div className="glass-card p-6 flex flex-col gap-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-1.5 h-6 bg-accent rounded-none" />
+                  <h3 className="text-sm font-bold text-text-primary uppercase tracking-[0.2em]">{t.campeonato}</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                      <Trophy className="w-3 h-3" /> {t.nomeCampeonato}
+                    </label>
+                    <input 
+                      type="text"
+                      maxLength={40}
+                      className="bg-white/5 border border-white/10 rounded-none px-3 py-2 text-sm font-semibold text-text-primary outline-accent"
+                      value={tournamentSettings.name || ''}
+                      onChange={(e) => setTournamentSettings(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="..."
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                      <UserIcon className="w-3 h-3" /> {t.organizador}
+                    </label>
+                    <input 
+                      type="text"
+                      maxLength={30}
+                      className="bg-white/5 border border-white/10 rounded-none px-3 py-2 text-sm font-semibold text-text-primary outline-accent"
+                      value={tournamentSettings.organizer || ''}
+                      onChange={(e) => setTournamentSettings(prev => ({ ...prev, organizer: e.target.value }))}
+                      placeholder="..."
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                      <Calendar className="w-3 h-3" /> {t.data}
+                    </label>
+                    <input 
+                      type="date"
+                      className="bg-white/5 border border-white/10 rounded-none px-3 py-2 text-sm font-semibold text-text-primary outline-accent"
+                      value={tournamentSettings.date || ''}
+                      onChange={(e) => setTournamentSettings(prev => ({ ...prev, date: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Teams Section */}
+              <div className="glass-card p-6 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-4 h-4 text-accent" />
+                    <h3 className="text-xs font-bold text-text-primary uppercase tracking-[0.15em]">{t.times} ({tournamentTeams.length}/8)</h3>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <input 
+                    type="text"
+                    maxLength={15}
+                    placeholder={t.adicionarTime}
+                    className="flex-1 bg-white/5 border border-white/10 rounded-none px-4 py-2 text-xs font-semibold text-text-primary outline-accent"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        addTournamentTeam((e.target as HTMLInputElement).value);
+                        (e.target as HTMLInputElement).value = '';
+                      }
+                    }}
+                  />
+                  <button 
+                    onClick={() => {
+                      const input = document.querySelector('input[placeholder="' + t.adicionarTime + '"]') as HTMLInputElement;
+                      if (input) {
+                        addTournamentTeam(input.value);
+                        input.value = '';
+                      }
+                    }}
+                    className="w-10 h-10 bg-accent text-white flex items-center justify-center shrink-0"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {tournamentTeams.map(team => (
+                    <div key={team.id} className="bg-white/5 border border-white/5 p-2 flex items-center justify-between group">
+                      <span className="text-[10px] font-bold uppercase tracking-widest truncate max-w-[80px]">{team.name}</span>
+                      <button onClick={() => removeTournamentTeam(team.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-red-500 hover:bg-red-500/10"><X className="w-3 h-3" /></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Classification & Matches Grid */}
+              <div className="flex flex-col gap-10 pb-12">
+                <div className="flex items-center justify-between px-1">
+                   <div className="flex items-center gap-3">
+                    <Medal className="w-4 h-4 text-accent-green" />
+                    <h3 className="text-xs font-bold text-text-primary uppercase tracking-[0.15em]">{t.campeonato}</h3>
+                  </div>
+                  <button 
+                    onClick={drawTournamentMatches}
+                    className="text-[9px] font-bold text-accent border border-accent/20 bg-accent/5 px-4 py-2 uppercase tracking-widest hover:bg-accent/10 transition-all"
+                  >
+                    {t.sortearJogos}
+                  </button>
+                </div>
+
+                {tournamentMatches.length > 0 && (
+                  <div className="space-y-12">
+                    {/* Groups Section */}
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                      {['A', 'B'].map(groupName => (
+                        <div key={groupName} className="glass-card p-6 flex flex-col gap-6">
+                          <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                            <h4 className="text-xs font-black text-text-primary uppercase tracking-widest">Grupo {groupName}</h4>
+                          </div>
+                          
+                          {/* Group Table */}
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                              <thead>
+                                <tr className="border-b border-white/10">
+                                  <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest">#</th>
+                                  <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest">{t.equipe}</th>
+                                  <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.pj}</th>
+                                  <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.vitorias}</th>
+                                  <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">E</th>
+                                  <th className="pb-3 text-[9px] font-bold text-accent uppercase tracking-widest text-center">{t.pontos}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {calculateGroupStandings(groupName as 'A' | 'B', tournamentMatches).map((team, idx) => (
+                                  <tr key={team.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                                    <td className="py-3 text-[10px] font-bold text-text-secondary pr-4">{idx + 1}</td>
+                                    <td className="py-3 text-[10px] font-bold text-text-primary uppercase tracking-widest truncate max-w-[100px]">{team.name}</td>
+                                    <td className="py-3 text-[10px] font-display font-medium text-center">{team.played}</td>
+                                    <td className="py-3 text-[10px] font-display font-medium text-center text-green-500">{team.won}</td>
+                                    <td className="py-3 text-[10px] font-display font-medium text-center text-blue-400">{team.draw}</td>
+                                    <td className="py-3 text-[10px] font-display font-bold text-center text-accent tabular-nums bg-accent/5">{team.points}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Group Matches */}
+                          <div className="space-y-3 mt-2">
+                             <span className="text-[9px] font-bold text-text-secondary uppercase tracking-widest opacity-50">{t.jogos}</span>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {tournamentMatches.filter(m => m.round === 'group' && m.id.startsWith(`G${groupName}-`)).map(match => (
+                                   <BracketMatch 
+                                      key={match.id} 
+                                      match={match} 
+                                      teams={tournamentTeams} 
+                                      onUpdateResult={updateMatchResult} 
+                                      onTransfer={transferToScoreboard} 
+                                      t={t} 
+                                      compact
+                                   />
+                                ))}
+                             </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Knockout Bracket Section */}
+                    <div className="flex flex-col gap-6">
+                      <div className="flex items-center gap-3 px-1 border-b border-white/5 pb-4">
+                        <Trophy className="w-4 h-4 text-accent" />
+                        <h3 className="text-xs font-bold text-text-primary uppercase tracking-[0.15em]">{language === 'pt' ? 'Fase Eliminatória' : 'Knockout Stage'}</h3>
+                      </div>
+                      
+                      <div className="flex flex-col lg:flex-row gap-8 overflow-x-auto no-scrollbar pb-8 px-1">
+                        {/* Semis Column */}
+                        <div className="flex flex-col gap-8 min-w-[280px]">
+                          <h4 className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] text-center mb-2 border-b border-white/5 pb-2">{t.semifinais}</h4>
+                          <div className="space-y-8">
+                            {tournamentMatches.filter(m => m.round === 'semis').map(match => (
+                              <BracketMatch key={match.id} match={match} teams={tournamentTeams} onUpdateResult={updateMatchResult} onTransfer={transferToScoreboard} t={t} />
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Final Column */}
+                        <div className="flex flex-col gap-8 min-w-[280px] lg:mt-24">
+                          <h4 className="text-[10px] font-bold text-accent uppercase tracking-[0.2em] text-center mb-2 border-b border-accent/20 pb-2">{t.final}</h4>
+                          <div className="space-y-8">
+                            {tournamentMatches.filter(m => m.round === 'final').map(match => (
+                              <BracketMatch key={match.id} match={match} teams={tournamentTeams} onUpdateResult={updateMatchResult} onTransfer={transferToScoreboard} t={t} isHighlight />
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 3rd Place Column */}
+                        <div className="flex flex-col gap-8 min-w-[280px] lg:mt-24">
+                          <h4 className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] text-center mb-2 border-b border-white/5 pb-2">{t.terceiroLugar}</h4>
+                          <div className="space-y-8">
+                            {tournamentMatches.filter(m => m.round === 'third').map(match => (
+                              <BracketMatch key={match.id} match={match} teams={tournamentTeams} onUpdateResult={updateMatchResult} onTransfer={transferToScoreboard} t={t} />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {tournamentMatches.length === 0 && (
+                   <div className="glass-card py-32 flex flex-col items-center justify-center opacity-30 text-xs font-medium uppercase tracking-widest gap-6">
+                      <div className="w-20 h-20 bg-bg-secondary rounded-none flex items-center justify-center">
+                        <Trophy className="w-10 h-10" />
+                      </div>
+                      {language === 'pt' ? 'Adicione 8 times e sorteie os grupos' : 'Add 8 teams and draw the groups'}
+                   </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Historico Tab (Standalone) */}
           {activeTab === 'historico' && (
           <div className="flex-1 flex flex-col gap-6 min-h-0 mb-4 pb-20">
@@ -1125,6 +1680,13 @@ export default function App() {
               ) : (
                 <div className="space-y-4">
                   {history.map((action, idx) => (
+                    action.type === 'separator' ? (
+                      <div key={action.id} className="flex items-center gap-4 py-6">
+                        <div className="flex-1 h-px bg-white/10"></div>
+                        <span className="text-[10px] font-black text-accent uppercase tracking-[0.3em] px-2">{action.description}</span>
+                        <div className="flex-1 h-px bg-white/10"></div>
+                      </div>
+                    ) : (
                     <motion.div 
                       key={action.id} 
                       initial={{ opacity: 0, x: -10 }}
@@ -1145,6 +1707,7 @@ export default function App() {
                         <div className="w-1.5 h-1.5 rounded-none bg-border group-hover:bg-accent transition-colors" />
                       </div>
                     </motion.div>
+                    )
                   ))}
                 </div>
               )}
@@ -1446,6 +2009,12 @@ export default function App() {
                   onClick={() => { setActiveTab('historico'); setIsMenuOpen(false); }} 
                 />
                 <MenuItem 
+                  icon={<Trophy className="w-5 h-5" />} 
+                  label={t.campeonato} 
+                  active={activeTab === 'campeonato'} 
+                  onClick={() => { setActiveTab('campeonato'); setIsMenuOpen(false); }} 
+                />
+                <MenuItem 
                   icon={<Settings className="w-5 h-5" />} 
                   label={t.configuracoes} 
                   active={activeTab === 'opcoes'} 
@@ -1477,6 +2046,11 @@ export default function App() {
           active={activeTab === 'historico'} 
           onClick={() => { setActiveTab('historico'); setIsMenuOpen(false); }}
           icon={<History className="w-5 h-5" />}
+        />
+        <NavButton 
+          active={activeTab === 'campeonato'} 
+          onClick={() => { setActiveTab('campeonato'); setIsMenuOpen(false); }}
+          icon={<Trophy className="w-5 h-5" />}
         />
         <NavButton 
           active={activeTab === 'opcoes'} 
@@ -1547,6 +2121,66 @@ function TimeEditor({ currentTime, onSave, onClose, t }: any) {
   );
 }
 
+function BracketMatch({ match, teams, onUpdateResult, onTransfer, t, isHighlight, compact }: any) {
+  const home = teams.find((t: any) => t.id === match.homeTeamId);
+  const visitor = teams.find((t: any) => t.id === match.visitorTeamId);
+  
+  const isFinished = match.status === 'finished';
+  const homeWinner = isFinished && match.homeScore > match.visitorScore;
+  const visitorWinner = isFinished && match.visitorScore > match.homeScore;
+
+  return (
+    <div className={`relative flex flex-col glass-card border-l-4 transition-all ${isHighlight ? 'border-accent scale-105 z-10' : 'border-white/10 opacity-90'} ${isHighlight ? 'shadow-2xl shadow-accent/20' : ''}`}>
+      <div className={`${compact ? 'p-2 space-y-1' : 'p-3 space-y-2'}`}>
+        {/* Home Team */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className={`w-1 h-4 rounded-full ${homeWinner ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-white/10'}`}></div>
+            <span className={`${compact ? 'text-[9px]' : 'text-[10px]'} font-bold uppercase tracking-widest truncate ${homeWinner ? 'text-text-primary' : 'text-text-secondary opacity-60'}`}>
+              {home?.name || 'TBD'}
+            </span>
+          </div>
+          <input 
+            type="number"
+            className={`${compact ? 'w-8 h-6' : 'w-10'} bg-black/40 border border-white/10 text-center text-xs font-bold p-1 outline-none no-scrollbar ${homeWinner ? 'text-accent' : 'text-text-primary'}`}
+            value={match.homeScore ?? 0}
+            onChange={(e) => onUpdateResult(match.id, parseInt(e.target.value) || 0, match.visitorScore)}
+          />
+        </div>
+
+        {/* Visitor Team */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className={`w-1 h-4 rounded-full ${visitorWinner ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-white/10'}`}></div>
+            <span className={`${compact ? 'text-[9px]' : 'text-[10px]'} font-bold uppercase tracking-widest truncate ${visitorWinner ? 'text-text-primary' : 'text-text-secondary opacity-60'}`}>
+              {visitor?.name || 'TBD'}
+            </span>
+          </div>
+          <input 
+            type="number"
+            className={`${compact ? 'w-8 h-6' : 'w-10'} bg-black/40 border border-white/10 text-center text-xs font-bold p-1 outline-none no-scrollbar ${visitorWinner ? 'text-accent' : 'text-text-primary'}`}
+            value={match.visitorScore ?? 0}
+            onChange={(e) => onUpdateResult(match.id, match.homeScore, parseInt(e.target.value) || 0)}
+          />
+        </div>
+      </div>
+
+      <button 
+        onClick={() => onTransfer(match)}
+        disabled={!home || !visitor}
+        className={`w-full ${compact ? 'py-1' : 'py-1.5'} transition-all text-[8px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 border-t border-white/5 ${(!home || !visitor) ? 'opacity-20 cursor-not-allowed' : 'bg-accent/5 hover:bg-accent/20 text-accent'}`}
+      >
+        <MonitorSmartphone className="w-3 h-3" />
+        {!compact && t.iniciarJogoNoPlacar}
+      </button>
+
+      {isFinished && (
+         <div className={`absolute -top-1.5 -right-1.5 bg-green-500 text-white text-[7px] font-black px-1 py-0.5 rounded-none uppercase tracking-tighter shadow-lg`}> OK </div>
+      )}
+    </div>
+  );
+}
+
 function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t, gameMode, colorClass }: any) {
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(name);
@@ -1572,7 +2206,7 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
               autoFocus
               maxLength={12}
               className="w-full text-center bg-slate-900/50 rounded-none text-xs font-bold text-text-primary py-2 px-3 outline-none border border-border uppercase"
-              value={tempName}
+              value={tempName || ''}
               onChange={(e) => setTempName(e.target.value)}
               onBlur={handleSave}
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}

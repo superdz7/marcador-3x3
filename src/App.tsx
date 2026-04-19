@@ -328,7 +328,6 @@ export default function App() {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const [newPlayerName, setNewPlayerName] = useState('');
-  const [newPlayerNumber, setNewPlayerNumber] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const hasStarted = useRef(false);
   const buzzerPlayedRef = useRef(false);
@@ -573,10 +572,33 @@ export default function App() {
 
   const addPlayer = () => {
     if (!newPlayerName.trim()) return;
+    
+    let name = '';
+    let number = '';
+    
+    if (newPlayerName.includes(',')) {
+      const parts = newPlayerName.split(',').map(p => p.trim());
+      // Identify which part is the number
+      if (!isNaN(Number(parts[0])) && parts[0] !== '') {
+        number = parts[0];
+        name = parts[1] || '';
+      } else if (!isNaN(Number(parts[1])) && parts[1] !== '') {
+        number = parts[1];
+        name = parts[0];
+      } else {
+        name = parts[0];
+        number = parts[1] || '';
+      }
+    } else {
+      name = newPlayerName;
+    }
+
+    if (!name.trim()) return;
+
     const player: Player = {
       id: Math.random().toString(36).substr(2, 9),
-      name: newPlayerName.toUpperCase(),
-      number: newPlayerNumber,
+      name: name.toUpperCase(),
+      number: number,
       stats: {
         pts2: { made: 0, missed: 0 },
         pts3: { made: 0, missed: 0 },
@@ -590,7 +612,6 @@ export default function App() {
     setPlayers(prev => [...prev, player]);
     setDrawnTeams([]);
     setNewPlayerName('');
-    setNewPlayerNumber('');
   };
 
   const removePlayer = (id: string) => {
@@ -938,17 +959,11 @@ export default function App() {
               <div className="flex gap-2 items-center">
                 <input 
                   type="text"
-                  placeholder={t.nomeJogador}
+                  placeholder={`${t.nomeJogador}, ${t.numeroJogador || 'Nº'}`}
                   className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-none px-4 py-3 text-sm font-semibold text-text-primary outline-accent placeholder:text-text-secondary/40"
                   value={newPlayerName}
                   onChange={(e) => setNewPlayerName(e.target.value)}
-                />
-                <input 
-                  type="text"
-                  placeholder={t.numeroJogador || 'Nº'}
-                  className="w-14 bg-white/5 border border-white/10 rounded-none px-1 py-3 text-sm font-black text-center text-text-primary outline-accent placeholder:text-text-secondary/40"
-                  value={newPlayerNumber}
-                  onChange={(e) => setNewPlayerNumber(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
                 />
                 <motion.button
                   className="w-12 h-12 bg-accent text-white rounded-none shadow-none flex items-center justify-center shrink-0 active:scale-95 transition-transform"

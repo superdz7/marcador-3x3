@@ -1284,7 +1284,11 @@ export default function App() {
             <div className="flex gap-4 h-28 sm:h-36 shrink-0">
               {/* Game Timer */}
               <motion.div 
-                className={`flex-[3] glass-card flex flex-col items-center justify-center relative overflow-hidden group ${hasStarted.current ? 'cursor-default' : 'cursor-pointer'}`}
+                className={`flex-[3] glass-card flex flex-col items-center justify-center relative overflow-hidden group transition-colors duration-500 ${hasStarted.current ? 'cursor-default' : 'cursor-pointer'} ${isRunning ? 'border-accent-blue/50 ring-1 ring-accent-blue/20' : ''}`}
+                animate={isRunning ? { 
+                  borderColor: ["rgba(255, 255, 255, 0.12)", "rgba(0, 210, 255, 0.5)", "rgba(255, 255, 255, 0.12)"],
+                } : { borderColor: "rgba(255, 255, 255, 0.12)" }}
+                transition={isRunning ? { repeat: Infinity, duration: 2 } : {}}
                 whileTap={hasStarted.current ? {} : { scale: 0.98 }}
                 onClick={() => {
                   if (hasStarted.current) {
@@ -1294,15 +1298,21 @@ export default function App() {
                   }
                 }}
               >
-                {isRunning && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: [1, 0.4, 1] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                    className="absolute top-3.5 left-4 w-2 h-2 rounded-full bg-accent-blue shadow-[0_0_8px_rgba(0,210,255,0.6)] z-20"
-                  />
-                )}
-                <span className="text-[11px] font-bold text-text-secondary uppercase tracking-[0.15em] absolute top-3">{t.tempoJogo}</span>
+                {/* Status Indicator */}
+                <div className="absolute top-3.5 left-4 z-20">
+                  {isRunning ? (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [1, 0.4, 1] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="w-2.5 h-2.5 rounded-full bg-accent-blue shadow-[0_0_8px_rgba(0,210,255,0.6)]"
+                    />
+                  ) : hasStarted.current && gameTime > 0 ? (
+                    <Pause className="w-2.5 h-2.5 text-accent-blue" />
+                  ) : null}
+                </div>
+
+                <span className="text-[9px] font-bold text-text-secondary uppercase tracking-[0.15em] absolute top-3">{t.tempoJogo}</span>
                 <div className="text-6xl sm:text-7xl font-display font-bold text-accent-blue text-glow-blue tracking-normal mt-7 leading-none text-digit">
                   {formatTime(gameTime)}
                 </div>
@@ -1314,7 +1324,7 @@ export default function App() {
                   className="w-full flex-1 glass-card flex flex-col items-center justify-center relative cursor-pointer active:scale-95 transition-transform overflow-hidden"
                   onClick={() => setShotClock(gameMode === '3x3' ? 12 : 14)}
                 >
-                  <span className="text-[11px] font-bold text-text-secondary uppercase tracking-[0.15em] absolute top-3 leading-none z-10">{t.posse}</span>
+                  <span className="text-[9px] font-bold text-text-secondary uppercase tracking-[0.15em] absolute top-3 leading-none z-10">{t.posse}</span>
                   <div className={`text-5xl font-display font-bold ${shotClock <= 3 && shotClock > 0 ? 'text-red-500 animate-pulse' : 'text-accent-green text-glow-green'} mt-7 text-digit relative z-10 leading-none`}>
                     {shotClock.toString().padStart(2, '0')}
                   </div>

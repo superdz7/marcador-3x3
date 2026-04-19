@@ -1372,7 +1372,7 @@ export default function App() {
             </div>
 
             {/* Controls Row */}
-            <div className="flex items-center justify-center gap-2 sm:gap-6 mt-10 lg:mt-16 shrink-0 pb-32 lg:pb-0 h-20 px-2 sm:px-4">
+            <div className="flex items-center justify-center gap-2 sm:gap-6 mt-1 lg:mt-2 shrink-0 px-2 sm:px-4">
               <ControlButton 
                 icon={<Undo2 />} 
                 label={t.desfazer} 
@@ -1408,7 +1408,7 @@ export default function App() {
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex justify-center mt-4 px-2"
+                className="flex justify-center mt-0 px-2 pb-20 lg:pb-4"
               >
                 <motion.button
                   whileHover={{ scale: 1.02 }}

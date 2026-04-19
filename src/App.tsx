@@ -363,19 +363,23 @@ export default function App() {
 
   // Persistence triggers
   useEffect(() => {
-    localStorage.setItem('bt_players', JSON.stringify(players));
-    localStorage.setItem('bt_history', JSON.stringify(history));
-    localStorage.setItem('bt_homeScore', homeScore.toString());
-    localStorage.setItem('bt_visitorScore', visitorScore.toString());
-    localStorage.setItem('bt_homeFouls', homeFouls.toString());
-    localStorage.setItem('bt_visitorFouls', visitorFouls.toString());
-    localStorage.setItem('bt_gameTime', gameTime.toString());
-    localStorage.setItem('bt_shotClock', shotClock.toString());
-    localStorage.setItem('bt_homeName', homeName);
-    localStorage.setItem('bt_visitorName', visitorName);
-    localStorage.setItem('bt_hasStarted', hasStarted.current.toString());
-    localStorage.setItem('bt_language', language);
-    localStorage.setItem('bt_gameMode', gameMode);
+    try {
+      localStorage.setItem('bt_players', JSON.stringify(players));
+      localStorage.setItem('bt_history', JSON.stringify(history));
+      localStorage.setItem('bt_homeScore', homeScore.toString());
+      localStorage.setItem('bt_visitorScore', visitorScore.toString());
+      localStorage.setItem('bt_homeFouls', homeFouls.toString());
+      localStorage.setItem('bt_visitorFouls', visitorFouls.toString());
+      localStorage.setItem('bt_gameTime', gameTime.toString());
+      localStorage.setItem('bt_shotClock', shotClock.toString());
+      localStorage.setItem('bt_homeName', homeName);
+      localStorage.setItem('bt_visitorName', visitorName);
+      localStorage.setItem('bt_hasStarted', hasStarted.current.toString());
+      localStorage.setItem('bt_language', language);
+      localStorage.setItem('bt_gameMode', gameMode);
+    } catch (e) {
+      console.warn('Failed to save to localStorage', e);
+    }
   }, [players, history, homeScore, visitorScore, homeFouls, visitorFouls, gameTime, shotClock, homeName, visitorName, language, gameMode]);
 
   const t = TRANSLATIONS[language];
@@ -389,6 +393,8 @@ export default function App() {
   };
 
   const saveToHistory = useCallback((description: string) => {
+    // Truncate description for safety
+    const safeDescription = description.substring(0, 100);
     const newAction: HistoryAction = {
       id: Math.random().toString(36).substr(2, 9),
       timestamp: Date.now(),
@@ -400,7 +406,7 @@ export default function App() {
         homeFouls,
         visitorFouls,
       },
-      description,
+      description: safeDescription,
     };
     setHistory(prev => [newAction, ...prev].slice(0, 100));
   }, [gameTime, shotClock, homeScore, visitorScore, homeFouls, visitorFouls]);
@@ -645,8 +651,8 @@ export default function App() {
 
     const player: Player = {
       id: Math.random().toString(36).substr(2, 9),
-      name: name.toUpperCase(),
-      number: number,
+      name: name.substring(0, 20).toUpperCase(),
+      number: number.substring(0, 3),
       stats: {
         pts2: { made: 0, missed: 0 },
         pts3: { made: 0, missed: 0 },
@@ -1022,6 +1028,7 @@ export default function App() {
               <div className="flex gap-2 items-center">
                 <input 
                   type="text"
+                  maxLength={30}
                   placeholder={`${t.nomeJogador}, ${t.numeroJogador || 'Nº'}`}
                   className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-none px-4 py-3 text-sm font-semibold text-text-primary outline-accent placeholder:text-text-secondary/40"
                   value={newPlayerName}
@@ -1269,6 +1276,24 @@ export default function App() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="glass-card p-6 overflow-hidden">
+              <button 
+                onClick={() => {
+                  localStorage.clear();
+                  window.location.reload();
+                }}
+                className="w-full flex items-center justify-between p-4 bg-red-500/10 border border-red-500/20 text-red-500 font-bold uppercase tracking-widest text-[11px] active:bg-red-500/20 transition-all group"
+              >
+                <span className="group-active:scale-95 transition-transform">{language === 'pt' ? 'Limpar Todos os Dados' : (language === 'es' ? 'Limpiar Todos los Datos' : 'Reset App Data')}</span>
+                <RotateCcw className="w-4 h-4 group-active:rotate-180 transition-all duration-500" />
+              </button>
+              <p className="px-4 py-2 text-[9px] text-text-secondary uppercase tracking-[0.2em] leading-relaxed mt-2 opacity-60">
+                {language === 'pt' 
+                  ? 'Isso apagará permanentemente todos os placares, jogadores e o histórico salvo neste dispositivo.' 
+                  : (language === 'es' ? 'Esto eliminará permanentemente todos os marcadores, jugadores y el historial guardado en este dispositivo.' : 'This will permanently delete everything saved on this device.')}
+              </p>
             </div>
 
             {/* Credit */}

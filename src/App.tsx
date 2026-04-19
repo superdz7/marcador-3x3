@@ -1613,13 +1613,13 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
             <div className="grid grid-cols-2 gap-1.5">
               <button 
                 onClick={() => updatePlayerStat(player.id, category, 'missed', 1)}
-                className="h-8 bg-red-500/10 text-red-500 border border-red-500/20 rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center order-1"
+                className="h-6 bg-red-500/10 text-red-500 border border-red-500/20 rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center order-1"
               >
                 -{step}
               </button>
               <button 
                 onClick={() => updatePlayerStat(player.id, category, 'made', 1)}
-                className="h-8 bg-green-500/10 text-green-500 border border-green-500/20 rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center order-2"
+                className="h-6 bg-green-500/10 text-green-500 border border-green-500/20 rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center order-2"
               >
                 +{step}
               </button>
@@ -1633,13 +1633,13 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
             <div className="grid grid-cols-2 gap-1.5">
               <button 
                 onClick={() => updatePlayerStat(player.id, category, -1)}
-                className="h-8 bg-bg-card text-text-secondary border border-border rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center order-1"
+                className="h-6 bg-bg-card text-text-secondary border border-border rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center order-1"
               >
                 <Minus className="w-3.5 h-3.5" />
               </button>
               <button 
                 onClick={() => updatePlayerStat(player.id, category, 1)}
-                className="h-8 bg-accent/10 text-accent border border-accent/20 rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center order-2"
+                className="h-6 bg-accent/10 text-accent border border-accent/20 rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center order-2"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -1657,15 +1657,16 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
           <div className="w-9 h-9 bg-accent rounded-none flex items-center justify-center text-white font-display font-bold text-xs shrink-0">
             {player.number || '00'}
           </div>
-          <div className="min-w-0">
-            <h3 className="font-display text-text-primary tracking-wide text-base uppercase truncate">{player.name}</h3>
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-baseline gap-2">
+              <h3 className="font-display text-text-primary tracking-wide text-base uppercase truncate">{player.name}</h3>
+              <p className="font-display font-bold text-green-500 text-base shrink-0">
+                {efficiency}%
+              </p>
+            </div>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-[9px] font-display font-bold text-accent uppercase tracking-widest">
                 {totalPoints} {t.pts}
-              </p>
-              <span className="w-1 h-1 rounded-none bg-border" />
-              <p className="text-[9px] font-display font-bold text-green-500 uppercase tracking-widest">
-                {efficiency}% {t.aproveitamento || 'Eficiência'}
               </p>
             </div>
           </div>

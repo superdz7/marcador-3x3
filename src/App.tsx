@@ -885,7 +885,7 @@ export default function App() {
   const calculateGroupStandings = (group: 'A' | 'B', matches: TournamentMatch[]) => {
     const groupTeams = tournamentTeams.filter(t => t.group === group);
     const stats = groupTeams.map(team => {
-        const s = { ...team, played: 0, won: 0, draw: 0, lost: 0, pointsFor: 0, pointsAgainst: 0, points: 0 };
+        const s = { ...team, played: 0, won: 0, lost: 0, pointsFor: 0, pointsAgainst: 0, points: 0 };
         matches.filter(m => m.round === 'group' && m.status === 'finished' && (m.homeTeamId === team.id || m.visitorTeamId === team.id)).forEach(m => {
             s.played++;
             const isHome = m.homeTeamId === team.id;
@@ -898,14 +898,8 @@ export default function App() {
             if (teamScore > oppScore) {
                 s.won++;
                 s.points += 2;
-            } else if (teamScore === oppScore) {
-                s.draw++;
-                s.points += 1;
             } else {
                 s.lost++;
-                // In some basketball formats, a loss earns 1 point? 
-                // But traditionally in many amateur tournaments it's 2 for win, 0 for loss.
-                // If draw is removed, we'll keep 2/0 normally unless requested.
             }
         });
         return s;
@@ -984,6 +978,13 @@ export default function App() {
 
     handleShare(text, t.equipes);
   };
+
+  const finalMatch = tournamentMatches.find(m => m.round === 'final');
+  const thirdMatch = tournamentMatches.find(m => m.round === 'third');
+
+  const champion = finalMatch?.status === 'finished' ? tournamentTeams.find(t => t.id === (finalMatch.homeScore > finalMatch.visitorScore ? finalMatch.homeTeamId : finalMatch.visitorTeamId)) : null;
+  const runnerUp = finalMatch?.status === 'finished' ? tournamentTeams.find(t => t.id === (finalMatch.homeScore > finalMatch.visitorScore ? finalMatch.visitorTeamId : finalMatch.homeTeamId)) : null;
+  const thirdPlace = thirdMatch?.status === 'finished' ? tournamentTeams.find(t => t.id === (thirdMatch.homeScore > thirdMatch.visitorScore ? thirdMatch.homeTeamId : thirdMatch.visitorTeamId)) : null;
 
   const getTournamentStandings = () => {
     return tournamentTeams;
@@ -1761,6 +1762,7 @@ export default function App() {
                                 <tr className="border-b border-white/10">
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest">#</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest">{t.equipe}</th>
+                                  <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.tp || 'TP'}</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.pj}</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.vitorias}</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.derrotas || 'D'}</th>
@@ -1773,6 +1775,7 @@ export default function App() {
                                   <tr key={team.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                                     <td className="py-3 text-[11px] font-bold text-text-secondary pr-4">{idx + 1}</td>
                                     <td className="py-3 text-[11px] font-bold text-text-primary uppercase tracking-widest truncate max-w-[140px]">{team.name}</td>
+                                    <td className="py-3 text-[11px] font-display font-medium text-center text-text-secondary">{team.pointsFor}</td>
                                     <td className="py-3 text-[11px] font-display font-medium text-center">{team.played}</td>
                                     <td className="py-3 text-[11px] font-display font-medium text-center text-green-500">{team.won}</td>
                                     <td className="py-3 text-[11px] font-display font-medium text-center text-red-400">{team.lost}</td>
@@ -1846,6 +1849,54 @@ export default function App() {
                             </div>
                           </div>
                         </div>
+
+                        {/* Podium Section */}
+                        {finalMatch?.status === 'finished' && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-12 glass-card p-8 border-t-2 border-accent relative overflow-hidden"
+                          >
+                            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                              <Trophy className="w-32 h-32" />
+                            </div>
+                            
+                            <div className="text-center mb-10">
+                              <h3 className="text-xs font-black text-accent uppercase tracking-[0.3em] mb-2">{language === 'pt' ? 'Pódio Final' : 'Final Podium'}</h3>
+                              <div className="h-0.5 w-12 bg-accent mx-auto"></div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              {/* 2nd Place */}
+                              <div className="order-2 md:order-1 flex flex-col items-center justify-end gap-3 p-4 bg-white/[0.02] border border-white/5">
+                                <Medal className="w-8 h-8 text-slate-400" />
+                                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest text-center">{runnerUp?.name || '---'}</span>
+                                <span className="text-[10px] font-black text-slate-400/50 uppercase tracking-tighter">2º LUGAR</span>
+                              </div>
+
+                              {/* Champion */}
+                              <div className="order-1 md:order-2 flex flex-col items-center gap-4 p-6 bg-accent/10 border border-accent/30 scale-105 shadow-2xl shadow-accent/20">
+                                <div className="relative">
+                                  <Trophy className="w-12 h-12 text-yellow-500" />
+                                  <motion.div 
+                                    animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+                                    transition={{ repeat: Infinity, duration: 2 }}
+                                    className="absolute inset-0 bg-yellow-500/20 blur-xl rounded-full"
+                                  />
+                                </div>
+                                <span className="text-sm font-black text-text-primary uppercase tracking-[0.15em] text-center">{champion?.name || '---'}</span>
+                                <span className="text-[10px] font-black text-accent uppercase tracking-widest">{language === 'pt' ? 'CAMPEÃO' : 'CHAMPION'}</span>
+                              </div>
+
+                              {/* 3rd Place */}
+                              <div className="order-3 md:order-3 flex flex-col items-center justify-end gap-3 p-4 bg-white/[0.02] border border-white/5">
+                                <Medal className="w-8 h-8 text-amber-700" />
+                                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest text-center">{thirdPlace?.name || '---'}</span>
+                                <span className="text-[10px] font-black text-amber-700/50 uppercase tracking-tighter">3º LUGAR</span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2348,6 +2399,21 @@ function BracketMatch({ match, teams, onUpdateResult, onTransfer, t, isHighlight
   const homeWinner = isFinished && match.homeScore > match.visitorScore;
   const visitorWinner = isFinished && match.visitorScore > match.homeScore;
 
+  const getRankIcon = (isTeamWinner: boolean, isHome: boolean) => {
+    if (!isFinished) return null;
+    
+    if (match.round === 'final') {
+      if (isTeamWinner) return <Trophy className="w-3.5 h-3.5 text-yellow-500 animate-pulse" />;
+      return <Medal className="w-3.5 h-3.5 text-slate-400" />;
+    }
+    
+    if (match.round === 'third' && isTeamWinner) {
+      return <Medal className="w-3.5 h-3.5 text-amber-700" />;
+    }
+    
+    return null;
+  };
+
   return (
     <div className={`relative flex flex-col glass-card border-l-4 transition-all ${isHighlight ? 'border-accent scale-105 z-10' : 'border-white/10 opacity-90'} ${isHighlight ? 'shadow-2xl shadow-accent/20' : ''}`}>
       <div className={`${compact ? 'p-2 space-y-1' : 'p-3 space-y-2'}`}>
@@ -2358,6 +2424,7 @@ function BracketMatch({ match, teams, onUpdateResult, onTransfer, t, isHighlight
             <span className={`${compact ? 'text-[9px]' : 'text-[10px]'} font-bold uppercase tracking-widest truncate ${homeWinner ? 'text-text-primary' : 'text-text-secondary opacity-60'}`}>
               {home?.name || 'TBD'}
             </span>
+            {getRankIcon(homeWinner, true)}
           </div>
           <input 
             type="number"
@@ -2374,6 +2441,7 @@ function BracketMatch({ match, teams, onUpdateResult, onTransfer, t, isHighlight
             <span className={`${compact ? 'text-[9px]' : 'text-[10px]'} font-bold uppercase tracking-widest truncate ${visitorWinner ? 'text-text-primary' : 'text-text-secondary opacity-60'}`}>
               {visitor?.name || 'TBD'}
             </span>
+            {getRankIcon(visitorWinner, false)}
           </div>
           <input 
             type="number"

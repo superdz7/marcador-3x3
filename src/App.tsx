@@ -1683,8 +1683,8 @@ export default function App() {
           {activeTab === 'campeonato' && (
             <div className="flex-1 flex flex-col gap-6 min-h-0 mb-4 pb-20 overflow-y-auto no-scrollbar">
               {/* Header Info */}
-              <div className="glass-card p-6 flex flex-col gap-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="glass-card p-2 flex flex-col gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold text-text-secondary uppercase tracking-widest flex items-center gap-2">
                       <Trophy className="w-3 h-3" /> {t.nomeCampeonato}
@@ -1726,7 +1726,7 @@ export default function App() {
               </div>
 
               {/* Teams Section */}
-              <div className="glass-card p-6 flex flex-col gap-4">
+              <div className="glass-card p-2 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Shield className="w-4 h-4 text-accent" />
@@ -1801,7 +1801,7 @@ export default function App() {
                     {tournamentTeams.length === 8 && (
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                       {['A', 'B'].map(groupName => (
-                        <div key={groupName} className="glass-card p-6 flex flex-col gap-6">
+                        <div key={groupName} className="glass-card p-4 flex flex-col gap-6">
                           <div className="flex items-center justify-between border-b border-white/5 pb-3">
                             <h4 className="text-xs font-black text-text-primary uppercase tracking-widest">Grupo {groupName}</h4>
                           </div>
@@ -1906,7 +1906,7 @@ export default function App() {
                           <motion.div 
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="mt-12 glass-card p-8 border-t-2 border-accent relative overflow-hidden"
+                            className="mt-12 glass-card p-6 border-t-2 border-accent relative overflow-hidden"
                           >
                             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                               <Trophy className="w-32 h-32" />
@@ -1926,7 +1926,7 @@ export default function App() {
                               </div>
 
                               {/* Champion */}
-                              <div className="order-1 md:order-2 flex flex-col items-center gap-4 p-6 bg-accent/10 border border-accent/30 scale-105 shadow-2xl shadow-accent/20">
+                              <div className="order-1 md:order-2 flex flex-col items-center gap-4 p-4 bg-accent/10 border border-accent/30 scale-105 shadow-2xl shadow-accent/20">
                                 <div className="relative">
                                   <Trophy className="w-12 h-12 text-yellow-500" />
                                   <motion.div 

@@ -206,7 +206,7 @@ const TRANSLATIONS: any = {
     v: 'V',
     e: 'E',
     d: 'D',
-    pf: 'PF',
+    tp: 'TP',
     quartas: 'Quartas de Final',
     semifinais: 'Semifinais',
     final: 'Final',
@@ -306,7 +306,7 @@ const TRANSLATIONS: any = {
     v: 'W',
     e: 'D',
     d: 'L',
-    pf: 'PF',
+    tp: 'TP',
     quartas: 'Quarter-finals',
     semifinais: 'Semi-finals',
     final: 'Final',
@@ -401,6 +401,10 @@ const TRANSLATIONS: any = {
     iniciarJogoNoPlacar: 'Iniciar en Marcador',
     p: 'P',
     pj: 'PJ',
+    v: 'V',
+    e: 'E',
+    d: 'D',
+    tp: 'TP',
     quartas: 'Cuartos de Final',
     semifinais: 'Semifinales',
     final: 'Final',
@@ -753,58 +757,66 @@ export default function App() {
   };
 
   const drawTournamentMatches = () => {
-    if (tournamentTeams.length < 8) {
-        setToast({ message: language === 'pt' ? 'É necessário adicionar 8 times' : 'Need 8 teams to start', type: 'error' });
+    if (tournamentTeams.length !== 4 && tournamentTeams.length !== 8) {
+        setToast({ message: language === 'pt' ? 'É necessário adicionar 4 ou 8 times' : 'Need 4 or 8 teams to start', type: 'error' });
         return;
     }
     
     const shuffledTeams = [...tournamentTeams].sort(() => Math.random() - 0.5);
-    const groupA = shuffledTeams.slice(0, 4);
-    const groupB = shuffledTeams.slice(4, 8);
-
-    setTournamentTeams(prev => prev.map(t => {
-        if (groupA.find(ga => ga.id === t.id)) return { ...t, group: 'A' };
-        if (groupB.find(gb => gb.id === t.id)) return { ...t, group: 'B' };
-        return t;
-    }));
-
     const matches: TournamentMatch[] = [];
-    
-    // Group A Matches
-    for (let i = 0; i < 4; i++) {
-        for (let j = i + 1; j < 4; j++) {
-            matches.push({
-                id: `GA-${i}${j}`,
-                homeTeamId: groupA[i].id,
-                visitorTeamId: groupA[j].id,
-                homeScore: 0,
-                visitorScore: 0,
-                status: 'pending',
-                round: 'group',
-                matchNumber: matches.length + 1
-            });
-        }
-    }
 
-    // Group B Matches
-    for (let i = 0; i < 4; i++) {
-        for (let j = i + 1; j < 4; j++) {
-            matches.push({
-                id: `GB-${i}${j}`,
-                homeTeamId: groupB[i].id,
-                visitorTeamId: groupB[j].id,
-                homeScore: 0,
-                visitorScore: 0,
-                status: 'pending',
-                round: 'group',
-                matchNumber: matches.length + 1
-            });
+    if (tournamentTeams.length === 8) {
+        const groupA = shuffledTeams.slice(0, 4);
+        const groupB = shuffledTeams.slice(4, 8);
+
+        setTournamentTeams(prev => prev.map(t => {
+            if (groupA.find(ga => ga.id === t.id)) return { ...t, group: 'A' };
+            if (groupB.find(gb => gb.id === t.id)) return { ...t, group: 'B' };
+            return t;
+        }));
+
+        // Group A Matches
+        for (let i = 0; i < 4; i++) {
+            for (let j = i + 1; j < 4; j++) {
+                matches.push({
+                    id: `GA-${i}${j}`,
+                    homeTeamId: groupA[i].id,
+                    visitorTeamId: groupA[j].id,
+                    homeScore: 0,
+                    visitorScore: 0,
+                    status: 'pending',
+                    round: 'group',
+                    matchNumber: matches.length + 1
+                });
+            }
         }
+
+        // Group B Matches
+        for (let i = 0; i < 4; i++) {
+            for (let j = i + 1; j < 4; j++) {
+                matches.push({
+                    id: `GB-${i}${j}`,
+                    homeTeamId: groupB[i].id,
+                    visitorTeamId: groupB[j].id,
+                    homeScore: 0,
+                    visitorScore: 0,
+                    status: 'pending',
+                    round: 'group',
+                    matchNumber: matches.length + 1
+                });
+            }
+        }
+        
+        // Semis (placeholders)
+        matches.push({ id: 'S1', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'semis', matchNumber: 1 });
+        matches.push({ id: 'S2', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'semis', matchNumber: 2 });
+    } else {
+        // 4 Teams - Direct Semis
+        setTournamentTeams(prev => prev.map(t => ({ ...t, group: null })));
+        
+        matches.push({ id: 'S1', homeTeamId: shuffledTeams[0].id, visitorTeamId: shuffledTeams[1].id, homeScore: 0, visitorScore: 0, status: 'pending', round: 'semis', matchNumber: 1 });
+        matches.push({ id: 'S2', homeTeamId: shuffledTeams[2].id, visitorTeamId: shuffledTeams[3].id, homeScore: 0, visitorScore: 0, status: 'pending', round: 'semis', matchNumber: 2 });
     }
-    
-    // Semis (placeholders)
-    matches.push({ id: 'S1', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'semis', matchNumber: 1 });
-    matches.push({ id: 'S2', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'semis', matchNumber: 2 });
     
     // Final (placeholder)
     matches.push({ id: 'F1', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'final', matchNumber: 1 });
@@ -833,14 +845,20 @@ export default function App() {
         const allGroupADone = groupAMatches.every(m => m.status === 'finished');
         const allGroupBDone = groupBMatches.every(m => m.status === 'finished');
 
-        if (allGroupADone && allGroupBDone) {
-            // Recalculate standings for groups to fill Semi-Finals
+        if (allGroupADone) {
             const teamsA = calculateGroupStandings('A', updatedMatches);
-            const teamsB = calculateGroupStandings('B', updatedMatches);
-
             updatedMatches = updatedMatches.map(m => {
-                if (m.id === 'S1') return { ...m, homeTeamId: teamsA[0].id, visitorTeamId: teamsB[1].id };
-                if (m.id === 'S2') return { ...m, homeTeamId: teamsB[0].id, visitorTeamId: teamsA[1].id };
+                if (m.id === 'S1') return { ...m, homeTeamId: teamsA[0].id };
+                if (m.id === 'S2') return { ...m, visitorTeamId: teamsA[1].id };
+                return m;
+            });
+        }
+        
+        if (allGroupBDone) {
+            const teamsB = calculateGroupStandings('B', updatedMatches);
+            updatedMatches = updatedMatches.map(m => {
+                if (m.id === 'S1') return { ...m, visitorTeamId: teamsB[1].id };
+                if (m.id === 'S2') return { ...m, homeTeamId: teamsB[0].id };
                 return m;
             });
         }
@@ -973,12 +991,16 @@ export default function App() {
 
   const updateScore = (team: Team, amount: number) => {
     if (gameTime === 0 && hasStarted.current) return;
+    
+    // Check if game is already over by score in 3x3
+    if (gameMode === '3x3' && (homeScore >= MAX_SCORE || visitorScore >= MAX_SCORE)) return;
+
     saveToHistory(`${team === 'home' ? t.casa : t.visitante} +${amount} pts`);
-    const limit = gameMode === '3x3' ? MAX_SCORE : 999;
+    
     if (team === 'home') {
-      setHomeScore(prev => Math.min(limit, prev + amount));
+      setHomeScore(prev => prev + amount);
     } else {
-      setVisitorScore(prev => Math.min(limit, prev + amount));
+      setVisitorScore(prev => prev + amount);
     }
     // Reset shot clock on score
     setShotClock(gameMode === '3x3' ? 12 : 24);
@@ -1657,6 +1679,7 @@ export default function App() {
                   <div className="flex items-center gap-3">
                     <Shield className="w-4 h-4 text-accent" />
                     <h3 className="text-xs font-bold text-text-primary uppercase tracking-[0.15em]">{t.times} ({tournamentTeams.length}/8)</h3>
+                    <p className="text-[9px] text-text-secondary uppercase tracking-widest mt-0.5 opacity-50">{language === 'pt' ? 'Mínimo 4 ou 8 para sortear' : 'Min 4 or 8 to draw'}</p>
                   </div>
                 </div>
 
@@ -1722,7 +1745,8 @@ export default function App() {
 
                 {tournamentMatches.length > 0 && (
                   <div className="space-y-12">
-                    {/* Groups Section */}
+                    {/* Groups Section (Only if 8 teams) */}
+                    {tournamentTeams.length === 8 && (
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                       {['A', 'B'].map(groupName => (
                         <div key={groupName} className="glass-card p-6 flex flex-col gap-6">
@@ -1737,23 +1761,25 @@ export default function App() {
                                 <tr className="border-b border-white/10">
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest">#</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest">{t.equipe}</th>
-                                  <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.pf || 'PF'}</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.pj}</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.vitorias}</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.derrotas || 'D'}</th>
-                                  <th className="pb-3 text-[9px] font-bold text-accent uppercase tracking-widest text-center">{t.pontos}</th>
+                                  <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">+/-</th>
+                                  <th className="pb-3 text-[10px] font-extrabold text-accent uppercase tracking-widest text-center">{t.pontos}</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {calculateGroupStandings(groupName as 'A' | 'B', tournamentMatches).map((team, idx) => (
                                   <tr key={team.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                                    <td className="py-3 text-[10px] font-bold text-text-secondary pr-4">{idx + 1}</td>
-                                    <td className="py-3 text-[10px] font-bold text-text-primary uppercase tracking-widest truncate max-w-[140px]">{team.name}</td>
-                                    <td className="py-3 text-[10px] font-display font-medium text-center text-text-secondary">{team.pointsFor}</td>
-                                    <td className="py-3 text-[10px] font-display font-medium text-center">{team.played}</td>
-                                    <td className="py-3 text-[10px] font-display font-medium text-center text-green-500">{team.won}</td>
-                                    <td className="py-3 text-[10px] font-display font-medium text-center text-red-400">{team.lost}</td>
-                                    <td className="py-3 text-[10px] font-display font-bold text-center text-accent tabular-nums bg-accent/5">{team.points}</td>
+                                    <td className="py-3 text-[11px] font-bold text-text-secondary pr-4">{idx + 1}</td>
+                                    <td className="py-3 text-[11px] font-bold text-text-primary uppercase tracking-widest truncate max-w-[140px]">{team.name}</td>
+                                    <td className="py-3 text-[11px] font-display font-medium text-center">{team.played}</td>
+                                    <td className="py-3 text-[11px] font-display font-medium text-center text-green-500">{team.won}</td>
+                                    <td className="py-3 text-[11px] font-display font-medium text-center text-red-400">{team.lost}</td>
+                                    <td className={`py-3 text-[11px] font-display font-medium text-center ${team.pointsFor - team.pointsAgainst >= 0 ? 'text-text-secondary' : 'text-red-500/70'}`}>
+                                      {team.pointsFor - team.pointsAgainst > 0 ? '+' : ''}{team.pointsFor - team.pointsAgainst}
+                                    </td>
+                                    <td className="py-3 text-[13px] font-display font-black text-center text-accent tabular-nums bg-accent/5">{team.points}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -1780,6 +1806,7 @@ export default function App() {
                         </div>
                       ))}
                     </div>
+                    )}
 
                     {/* Knockout Bracket Section */}
                     <div className="flex flex-col gap-6">
@@ -1799,23 +1826,24 @@ export default function App() {
                           </div>
                         </div>
 
-                        {/* Final Column */}
-                        <div className="flex flex-col gap-8 min-w-[280px] lg:mt-24">
-                          <h4 className="text-[10px] font-bold text-accent uppercase tracking-[0.2em] text-center mb-2 border-b border-accent/20 pb-2">{t.final}</h4>
-                          <div className="space-y-8">
-                            {tournamentMatches.filter(m => m.round === 'final').map(match => (
-                              <BracketMatch key={match.id} match={match} teams={tournamentTeams} onUpdateResult={updateMatchResult} onTransfer={transferToScoreboard} t={t} isHighlight />
-                            ))}
+                        {/* Final and 3rd Place Column */}
+                        <div className="flex flex-col gap-16 min-w-[280px] lg:mt-24">
+                          <div>
+                            <h4 className="text-[10px] font-bold text-accent uppercase tracking-[0.2em] text-center mb-2 border-b border-accent/20 pb-2">{t.final}</h4>
+                            <div className="space-y-8">
+                              {tournamentMatches.filter(m => m.round === 'final').map(match => (
+                                <BracketMatch key={match.id} match={match} teams={tournamentTeams} onUpdateResult={updateMatchResult} onTransfer={transferToScoreboard} t={t} isHighlight />
+                              ))}
+                            </div>
                           </div>
-                        </div>
 
-                        {/* 3rd Place Column */}
-                        <div className="flex flex-col gap-8 min-w-[280px] lg:mt-24">
-                          <h4 className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] text-center mb-2 border-b border-white/5 pb-2">{t.terceiroLugar}</h4>
-                          <div className="space-y-8">
-                            {tournamentMatches.filter(m => m.round === 'third').map(match => (
-                              <BracketMatch key={match.id} match={match} teams={tournamentTeams} onUpdateResult={updateMatchResult} onTransfer={transferToScoreboard} t={t} />
-                            ))}
+                          <div>
+                            <h4 className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] text-center mb-2 border-b border-white/5 pb-2">{t.terceiroLugar}</h4>
+                            <div className="space-y-8">
+                              {tournamentMatches.filter(m => m.round === 'third').map(match => (
+                                <BracketMatch key={match.id} match={match} teams={tournamentTeams} onUpdateResult={updateMatchResult} onTransfer={transferToScoreboard} t={t} />
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1828,7 +1856,7 @@ export default function App() {
                       <div className="w-20 h-20 bg-bg-secondary rounded-none flex items-center justify-center">
                         <Trophy className="w-10 h-10" />
                       </div>
-                      {language === 'pt' ? 'Adicione 8 times e sorteie os grupos' : 'Add 8 teams and draw the groups'}
+                      {language === 'pt' ? 'Adicione 4 ou 8 times e sorteie as chaves' : 'Add 4 or 8 teams and draw the matches'}
                    </div>
                 )}
               </div>
@@ -1895,13 +1923,13 @@ export default function App() {
 
           {/* Opcoes Tab (Standalone) */}
           {activeTab === 'opcoes' && (
-            <div className="flex-1 flex flex-col gap-8 pb-32 lg:pb-8 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto no-scrollbar">
+            <div className="flex-1 flex flex-col gap-8 pb-32 lg:pb-8 lg:max-h-[calc(100vh-140px)] overflow-y-auto no-scrollbar">
             
             <div className="flex flex-col gap-4">
               {/* Group 1: General */}
-              <div className="glass-card overflow-hidden">
+              <div className="glass-card">
                 {/* Language Selection */}
-                <div className="p-6 border-b border-white/5">
+                <div className="p-8 border-b border-white/5">
                   <label className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
                     <Languages className="w-3.5 h-3.5 text-accent" /> {t.idioma}
                   </label>
@@ -1919,7 +1947,7 @@ export default function App() {
                 </div>
 
                 {/* Game Mode Selection */}
-                <div className="p-6">
+                <div className="p-8">
                   <label className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
                     <Trophy className="w-3.5 h-3.5 text-accent" /> {t.modoJogo}
                   </label>
@@ -1944,9 +1972,9 @@ export default function App() {
               </div>
 
               {/* Group 2: System */}
-              <div className="glass-card overflow-hidden">
+              <div className="glass-card">
                 {/* Wake Lock */}
-                <div className="p-6 flex items-center justify-between border-b border-white/5">
+                <div className="p-8 flex items-center justify-between border-b border-white/5">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-blue-500 rounded-none flex items-center justify-center">
                       <MonitorSmartphone className="w-4 h-4 text-white" />
@@ -1967,7 +1995,7 @@ export default function App() {
                 </div>
 
                 {/* Sounds Section Header */}
-                <div className="p-5">
+                <div className="p-8">
                   <label className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2 mb-5">
                     <Volume2 className="w-3.5 h-3.5 text-accent" /> {t.sons}
                   </label>
@@ -2019,13 +2047,13 @@ export default function App() {
               </div>
             </div>
 
-            <div className="glass-card p-6 overflow-hidden">
+            <div className="glass-card p-8">
               <button 
                 onClick={() => {
                   localStorage.clear();
                   window.location.reload();
                 }}
-                className="w-full flex items-center justify-between p-4 bg-red-500/10 border border-red-500/20 text-red-500 font-bold uppercase tracking-widest text-[11px] active:bg-red-500/20 transition-all group"
+                className="w-full flex items-center justify-between py-5 px-6 bg-red-500/10 border border-red-500/20 text-red-500 font-bold uppercase tracking-widest text-[11px] active:bg-red-500/20 transition-all group"
               >
                 <span className="group-active:scale-95 transition-transform">{language === 'pt' ? 'Limpar Todos os Dados' : (language === 'es' ? 'Limpiar Todos los Datos' : 'Reset App Data')}</span>
                 <RotateCcw className="w-4 h-4 group-active:rotate-180 transition-all duration-500" />

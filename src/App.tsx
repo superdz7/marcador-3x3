@@ -212,6 +212,10 @@ const TRANSLATIONS: any = {
     final: 'Final',
     terceiroLugar: '3º Lugar',
     vencedor: 'Vencedor',
+    sortearChaves: 'Adicione 4 ou 8 times e sorteie as chaves',
+    podioFinal: 'Pódio Final',
+    campeao: 'CAMPEÃO',
+    minimoTimesParaSortear: 'Mínimo 4 ou 8 para sortear',
   },
   en: {
     placar: 'SCOREBOARD',
@@ -312,6 +316,10 @@ const TRANSLATIONS: any = {
     final: 'Final',
     terceiroLugar: '3rd Place',
     vencedor: 'Winner',
+    sortearChaves: 'Add 4 or 8 teams and draw the matches',
+    podioFinal: 'Final Podium',
+    campeao: 'CHAMPION',
+    minimoTimesParaSortear: 'Min 4 or 8 to draw',
   },
   es: {
     placar: 'MARCADOR',
@@ -410,6 +418,10 @@ const TRANSLATIONS: any = {
     final: 'Final',
     terceiroLugar: '3º Lugar',
     vencedor: 'Ganador',
+    sortearChaves: 'Añade 4 u 8 equipos y sortea las eliminatorias',
+    podioFinal: 'Podio Final',
+    campeao: 'CAMPEÓN',
+    minimoTimesParaSortear: 'Mínimo 4 u 8 para sortear',
   }
 };
 
@@ -1680,7 +1692,7 @@ export default function App() {
                   <div className="flex items-center gap-3">
                     <Shield className="w-4 h-4 text-accent" />
                     <h3 className="text-xs font-bold text-text-primary uppercase tracking-[0.15em]">{t.times} ({tournamentTeams.length}/8)</h3>
-                    <p className="text-[9px] text-text-secondary uppercase tracking-widest mt-0.5 opacity-50">{language === 'pt' ? 'Mínimo 4 ou 8 para sortear' : 'Min 4 or 8 to draw'}</p>
+                    <p className="text-[9px] text-text-secondary uppercase tracking-widest mt-0.5 opacity-50">{t.minimoTimesParaSortear}</p>
                   </div>
                 </div>
 
@@ -1862,7 +1874,7 @@ export default function App() {
                             </div>
                             
                             <div className="text-center mb-10">
-                              <h3 className="text-xs font-black text-accent uppercase tracking-[0.3em] mb-2">{language === 'pt' ? 'Pódio Final' : 'Final Podium'}</h3>
+                              <h3 className="text-xs font-black text-accent uppercase tracking-[0.3em] mb-2">{t.podioFinal}</h3>
                               <div className="h-0.5 w-12 bg-accent mx-auto"></div>
                             </div>
 
@@ -1871,7 +1883,7 @@ export default function App() {
                               <div className="order-2 md:order-1 flex flex-col items-center justify-end gap-3 p-4 bg-white/[0.02] border border-white/5">
                                 <Medal className="w-8 h-8 text-slate-400" />
                                 <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest text-center">{runnerUp?.name || '---'}</span>
-                                <span className="text-[10px] font-black text-slate-400/50 uppercase tracking-tighter">2º LUGAR</span>
+                                <span className="text-[10px] font-black text-slate-400/50 uppercase tracking-tighter">2º {t.terceiroLugar.toUpperCase()}</span>
                               </div>
 
                               {/* Champion */}
@@ -1885,14 +1897,14 @@ export default function App() {
                                   />
                                 </div>
                                 <span className="text-sm font-black text-text-primary uppercase tracking-[0.15em] text-center">{champion?.name || '---'}</span>
-                                <span className="text-[10px] font-black text-accent uppercase tracking-widest">{language === 'pt' ? 'CAMPEÃO' : 'CHAMPION'}</span>
+                                <span className="text-[10px] font-black text-accent uppercase tracking-widest">{t.campeao}</span>
                               </div>
 
                               {/* 3rd Place */}
                               <div className="order-3 md:order-3 flex flex-col items-center justify-end gap-3 p-4 bg-white/[0.02] border border-white/5">
                                 <Medal className="w-8 h-8 text-amber-700" />
                                 <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest text-center">{thirdPlace?.name || '---'}</span>
-                                <span className="text-[10px] font-black text-amber-700/50 uppercase tracking-tighter">3º LUGAR</span>
+                                <span className="text-[10px] font-black text-amber-700/50 uppercase tracking-tighter">3º {t.terceiroLugar.toUpperCase()}</span>
                               </div>
                             </div>
                           </motion.div>
@@ -1907,7 +1919,7 @@ export default function App() {
                       <div className="w-20 h-20 bg-bg-secondary rounded-none flex items-center justify-center">
                         <Trophy className="w-10 h-10" />
                       </div>
-                      {language === 'pt' ? 'Adicione 4 ou 8 times e sorteie as chaves' : 'Add 4 or 8 teams and draw the matches'}
+                      {t.sortearChaves}
                    </div>
                 )}
               </div>

@@ -188,8 +188,8 @@ const TRANSLATIONS: any = {
     nomeCampeonato: 'Nome do Campeonato',
     organizador: 'Organizador',
     data: 'Data',
-    times: 'Times',
-    adicionarTime: 'Adicionar Time',
+    times: 'Equipes',
+    adicionarTime: 'Adicionar Equipe',
     classificacao: 'Classificação',
     jogos: 'Jogos',
     pontos: 'PTS',
@@ -1501,7 +1501,7 @@ export default function App() {
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex justify-center mt-0 px-2 pb-20 lg:pb-4"
+                className="flex justify-center mt-0 px-2 pb-1 lg:pb-4 shrink-0"
               >
                 <motion.button
                   whileHover={{ scale: 1.02 }}
@@ -1514,6 +1514,55 @@ export default function App() {
                 </motion.button>
               </motion.div>
             )}
+
+            {/* Tablet History Section */}
+            <div className="hidden md:flex lg:hidden flex-1 flex-col gap-4 min-h-0 mt-4 pb-20">
+              <div className="flex justify-between items-center px-1 shrink-0">
+                <div className="flex items-center gap-2">
+                  <History className="w-3.5 h-3.5 text-accent" />
+                  <h3 className="text-[10px] font-black text-text-primary uppercase tracking-[0.2em]">{t.historico}</h3>
+                </div>
+                <button
+                  className="text-[9px] font-bold text-accent uppercase tracking-widest bg-accent/5 px-3 py-1.5 border border-accent/20 hover:bg-accent/10 transition-colors"
+                  onClick={shareHistory}
+                >
+                  {t.copiar}
+                </button>
+              </div>
+              
+              <div className="flex-1 glass-card p-4 overflow-y-auto no-scrollbar border-dashed border-white/10 bg-white/[0.01]">
+                {history.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-text-secondary gap-4 opacity-40">
+                    <History className="w-8 h-8 opacity-20" />
+                    <p className="text-[10px] font-medium tracking-widest uppercase">{t.nenhumaAcao}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {[...history].reverse().slice(0, 10).map((action, idx) => (
+                      <div 
+                        key={action.id} 
+                        className="flex items-center gap-3 p-1 border-b border-white/5 last:border-0 pb-3"
+                      >
+                        <div className="text-[8px] font-mono text-text-secondary w-12 tabular-nums opacity-60">
+                          {new Date(action.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[10px] font-bold text-text-primary tracking-tight leading-tight">{action.description}</p>
+                          <p className="text-[8px] font-black text-accent mt-1 uppercase tracking-widest">
+                            {action.state.homeScore} — {action.state.visitorScore}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    {history.length > 10 && (
+                       <p className="text-[8px] text-center text-text-secondary opacity-40 uppercase tracking-widest pt-2">
+                         + {history.length - 10} {language === 'pt' ? 'ações anteriores' : 'previous actions'}
+                       </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Column 2: History/Stats (Always visible on lg if activeTab is placar/stats) */}
@@ -1729,7 +1778,7 @@ export default function App() {
               <div className="glass-card p-2 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Shield className="w-4 h-4 text-accent" />
+                    <Users className="w-4 h-4 text-accent" />
                     <h3 className="text-xs font-bold text-text-primary uppercase tracking-[0.15em]">{t.times} ({tournamentTeams.length}/8)</h3>
                     <p className="text-[9px] text-text-secondary uppercase tracking-widest mt-0.5 opacity-50">{t.minimoTimesParaSortear}</p>
                   </div>

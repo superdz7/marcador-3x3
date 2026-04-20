@@ -896,9 +896,11 @@ export default function App() {
 
   const calculateGroupStandings = (group: 'A' | 'B', matches: TournamentMatch[]) => {
     const groupTeams = tournamentTeams.filter(t => t.group === group);
+    const finishedMatches = matches.filter(m => m.round === 'group' && m.status === 'finished');
+
     const stats = groupTeams.map(team => {
         const s = { ...team, played: 0, won: 0, lost: 0, pointsFor: 0, pointsAgainst: 0, points: 0 };
-        matches.filter(m => m.round === 'group' && m.status === 'finished' && (m.homeTeamId === team.id || m.visitorTeamId === team.id)).forEach(m => {
+        finishedMatches.filter(m => m.homeTeamId === team.id || m.visitorTeamId === team.id).forEach(m => {
             s.played++;
             const isHome = m.homeTeamId === team.id;
             const teamScore = isHome ? m.homeScore : m.visitorScore;
@@ -909,24 +911,61 @@ export default function App() {
             
             if (teamScore > oppScore) {
                 s.won++;
-                s.points += 2;
+                s.points += 2; // FIBA: Vitória = 2 pts
             } else {
                 s.lost++;
+                s.points += 1; // FIBA: Derrota = 1 pt
             }
         });
         return s;
     });
 
-    return stats.sort((a, b) => {
-        // 1. Points
+    const compareTeams = (a: any, b: any, tieGroup: any[]): number => {
+        // 1. Pontuação Geral
         if (b.points !== a.points) return b.points - a.points;
-        // 2. Saldo (Point Difference)
+
+        // CRITÉRIOS DE DESEMPATE FIBA
+        // Identificar todas as equipes empatadas com a mesma pontuação
+        const tiedTeams = tieGroup.filter(t => t.points === a.points);
+        if (tiedTeams.length > 1) {
+            const tiedIds = tiedTeams.map(t => t.id);
+            const h2hMatches = finishedMatches.filter(m => tiedIds.includes(m.homeTeamId) && tiedIds.includes(m.visitorTeamId));
+            
+            const getH2HStats = (id: string) => {
+                let pts = 0, pFor = 0, pAgainst = 0;
+                h2hMatches.filter(m => m.homeTeamId === id || m.visitorTeamId === id).forEach(m => {
+                    const isH = m.homeTeamId === id;
+                    const ts = isH ? m.homeScore : m.visitorScore;
+                    const os = isH ? m.visitorScore : m.homeScore;
+                    // No mini-grupo também aplica 2/1
+                    pts += (ts > os ? 2 : 1);
+                    pFor += ts;
+                    pAgainst += os;
+                });
+                return { pts, diff: pFor - pAgainst, pFor };
+            };
+
+            const aH2H = getH2HStats(a.id);
+            const bH2H = getH2HStats(b.id);
+
+            // 2. Confronto Direto (Pontos no mini-grupo)
+            if (bH2H.pts !== aH2H.pts) return bH2H.pts - aH2H.pts;
+            // 3. Saldo de pontos no Confronto Direto
+            if (bH2H.diff !== aH2H.diff) return bH2H.diff - aH2H.diff;
+            // 4. Pontos feitos no Confronto Direto
+            if (bH2H.pFor !== aH2H.pFor) return bH2H.pFor - aH2H.pFor;
+        }
+
+        // 5. Saldo de pontos Geral
         const diffA = a.pointsFor - a.pointsAgainst;
         const diffB = b.pointsFor - b.pointsAgainst;
         if (diffB !== diffA) return diffB - diffA;
-        // 3. Attack (Total Points For)
+
+        // 6. Pontos feitos Geral
         return b.pointsFor - a.pointsFor;
-    });
+    };
+
+    return stats.sort((a, b) => compareTeams(a, b, stats));
   };
 
   const resetTournament = () => {
@@ -1775,7 +1814,7 @@ export default function App() {
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest">#</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest">{t.equipe}</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.tp || 'TP'}</th>
-                                  <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.pj}</th>
+                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.pj}</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.vitorias}</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">{t.derrotas || 'D'}</th>
                                   <th className="pb-3 text-[9px] font-bold text-text-secondary uppercase tracking-widest text-center">+/-</th>

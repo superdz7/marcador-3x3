@@ -34,7 +34,8 @@ import {
   Shield,
   Medal,
   List,
-  Trash2
+  Trash2,
+  TriangleAlert
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -58,6 +59,7 @@ interface HistoryAction {
   state: Omit<GameState, 'isRunning'>;
   description: string;
   type: 'action' | 'separator';
+  category?: 'point1' | 'point2' | 'point3' | 'foul' | 'game_start' | 'game_end';
 }
 
 interface Player {
@@ -561,13 +563,14 @@ export default function App() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const saveToHistory = useCallback((description: string) => {
+  const saveToHistory = useCallback((description: string, category?: HistoryAction['category']) => {
     // Truncate description for safety
     const safeDescription = description.substring(0, 100);
     const newAction: HistoryAction = {
       id: Math.random().toString(36).substr(2, 9),
       timestamp: Date.now(),
       type: 'action',
+      category,
       state: {
         gameTime,
         shotClock,
@@ -1034,7 +1037,13 @@ export default function App() {
     // Check if game is already over by score in 3x3
     if (gameMode === '3x3' && (homeScore >= MAX_SCORE || visitorScore >= MAX_SCORE)) return;
 
-    saveToHistory(`${team === 'home' ? t.casa : t.visitante} +${amount} pts`);
+    const categoryMap: Record<number, HistoryAction['category']> = {
+      1: 'point1',
+      2: 'point2',
+      3: 'point3'
+    };
+
+    saveToHistory(`${team === 'home' ? t.casa : t.visitante} +${amount} pts`, categoryMap[amount]);
     
     if (team === 'home') {
       setHomeScore(prev => prev + amount);
@@ -1047,7 +1056,7 @@ export default function App() {
 
   const updateFouls = (team: Team) => {
     if (gameTime === 0 && hasStarted.current) return;
-    saveToHistory(team === 'home' ? t.faltaCasa : t.faltaVisitante);
+    saveToHistory(team === 'home' ? t.faltaCasa : t.faltaVisitante, 'foul');
     if (team === 'home') {
       setHomeFouls(prev => prev + 1);
     } else {
@@ -1288,7 +1297,7 @@ export default function App() {
   useEffect(() => {
     if (isRunning) {
       if (!hasStarted.current) {
-        saveToHistory(t.inicioPartida);
+        saveToHistory(t.inicioPartida, 'game_start');
         hasStarted.current = true;
       }
       lastTickRef.current = Date.now();
@@ -1328,7 +1337,7 @@ export default function App() {
     
     if (isGameOver) {
       if (isRunning || (timeEnded && !history.some(h => h.description.includes(t.fimJogo)))) {
-        saveToHistory(`${t.fimJogo} - ${homeName} ${homeScore} x ${visitorScore} ${visitorName}`);
+        saveToHistory(`${t.fimJogo} - ${homeName} ${homeScore} x ${visitorScore} ${visitorName}`, 'game_end');
       }
       setIsRunning(false);
       
@@ -1672,7 +1681,26 @@ export default function App() {
                                 {action.state.homeScore} — {action.state.visitorScore}
                               </p>
                             </div>
-                            <div className="w-1 h-1 rounded-none bg-border group-hover:bg-accent transition-colors shrink-0" />
+                            <div className="shrink-0 flex items-center justify-end min-w-[32px]">
+                              {action.category === 'point1' && <Dribbble className="w-3 h-3 text-accent" />}
+                              {action.category === 'point2' && (
+                                <div className="flex gap-0.5">
+                                  <Dribbble className="w-3 h-3 text-accent" />
+                                  <Dribbble className="w-3 h-3 text-accent" />
+                                </div>
+                              )}
+                              {action.category === 'point3' && (
+                                <div className="flex gap-0.5">
+                                  <Dribbble className="w-3 h-3 text-accent" />
+                                  <Dribbble className="w-3 h-3 text-accent" />
+                                  <Dribbble className="w-3 h-3 text-accent" />
+                                </div>
+                              )}
+                              {action.category === 'foul' && <TriangleAlert className="w-3 h-3 text-red-500" />}
+                              {action.category === 'game_start' && <Play className="w-3 h-3 text-green-500" />}
+                              {action.category === 'game_end' && <Trophy className="w-3 h-3 text-yellow-500" />}
+                              {!action.category && <div className="w-1 h-1 rounded-none bg-border group-hover:bg-accent transition-colors" />}
+                            </div>
                           </div>
                         </motion.div>
                         )
@@ -2137,7 +2165,26 @@ export default function App() {
                             {action.state.homeScore} — {action.state.visitorScore}
                           </p>
                         </div>
-                        <div className="w-1.5 h-1.5 rounded-none bg-border group-hover:bg-accent transition-colors" />
+                        <div className="shrink-0 flex items-center justify-end min-w-[40px]">
+                          {action.category === 'point1' && <Dribbble className="w-3.5 h-3.5 text-accent" />}
+                          {action.category === 'point2' && (
+                            <div className="flex gap-1">
+                              <Dribbble className="w-3.5 h-3.5 text-accent" />
+                              <Dribbble className="w-3.5 h-3.5 text-accent" />
+                            </div>
+                          )}
+                          {action.category === 'point3' && (
+                            <div className="flex gap-1">
+                              <Dribbble className="w-3.5 h-3.5 text-accent" />
+                              <Dribbble className="w-3.5 h-3.5 text-accent" />
+                              <Dribbble className="w-3.5 h-3.5 text-accent" />
+                            </div>
+                          )}
+                          {action.category === 'foul' && <TriangleAlert className="w-3.5 h-3.5 text-red-500" />}
+                          {action.category === 'game_start' && <Play className="w-3.5 h-3.5 text-green-500" />}
+                          {action.category === 'game_end' && <Trophy className="w-3.5 h-3.5 text-yellow-500" />}
+                          {!action.category && <div className="w-1.5 h-1.5 rounded-none bg-border group-hover:bg-accent transition-colors" />}
+                        </div>
                       </div>
                     </motion.div>
                     )

@@ -116,7 +116,7 @@ const TRANSLATIONS: any = {
   pt: {
     placar: 'Placar',
     historico: 'Histórico',
-    estatisticas: 'Estatísticas',
+    estatisticas: 'Desempenho / Sorteio',
     opcoes: 'Opções',
     casa: 'CASA',
     visitante: 'VISITANTE',
@@ -161,7 +161,7 @@ const TRANSLATIONS: any = {
     somTempoJogo: 'Som de fim de jogo',
     somTempoPosse: 'Som de fim de posse',
     testarSom: 'Testar Som',
-    adicionarJogador: 'Adicionar Jogador',
+    adicionarJogador: 'Jogador',
     nomeJogador: 'Nome',
     numeroJogador: 'Nº',
     categoria: 'Categoria',
@@ -220,7 +220,7 @@ const TRANSLATIONS: any = {
   en: {
     placar: 'SCOREBOARD',
     historico: 'HISTORY',
-    estatisticas: 'Stats',
+    estatisticas: 'Performance / Draft',
     opcoes: 'OPTIONS',
     casa: 'HOME',
     visitante: 'AWAY',
@@ -265,7 +265,7 @@ const TRANSLATIONS: any = {
     somTempoJogo: 'Game end sound',
     somTempoPosse: 'Shot clock sound',
     testarSom: 'Test Sound',
-    adicionarJogador: 'Add Player',
+    adicionarJogador: 'Player',
     nomeJogador: 'Name',
     numeroJogador: 'Nº',
     categoria: 'Category',
@@ -324,7 +324,7 @@ const TRANSLATIONS: any = {
   es: {
     placar: 'MARCADOR',
     historico: 'HISTORIAL',
-    estatisticas: 'ESTADÍSTICAS',
+    estatisticas: 'Desempeño / Sorteo',
     opcoes: 'OPCIONES',
     casa: 'LOCAL',
     visitante: 'VISITANTE',
@@ -367,7 +367,7 @@ const TRANSLATIONS: any = {
     somTempoJogo: 'Sonido de fin de juego',
     somTempoPosse: 'Sonido de fin de posesión',
     testarSom: 'Probar Sonido',
-    adicionarJogador: 'Añadir Jugador',
+    adicionarJogador: 'Jugador',
     nomeJogador: 'Nombre',
     numeroJogador: 'Nº',
     categoria: 'Categoría',
@@ -1627,13 +1627,6 @@ export default function App() {
               <>
                 <div className="flex items-center px-1">
                   <div className="flex gap-2 ml-auto">
-                    <motion.button 
-                      onClick={handleDraft}
-                      className="text-[11px] font-bold text-accent uppercase tracking-widest bg-accent/10 px-4 py-2 rounded-none border border-accent/20 active:scale-95 transition-all flex items-center gap-2"
-                    >
-                      <Users className="w-3.5 h-3.5" />
-                      {t.sorteio}
-                    </motion.button>
                     {drawnTeams.length > 0 && (
                       <motion.button 
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -1648,7 +1641,7 @@ export default function App() {
                 </div>
 
                 {/* Add Player Form */}
-                <div className="glass-card rounded-none p-4 flex flex-col gap-3 mx-1">
+                <div className="glass-card rounded-none p-4 flex flex-col gap-4 mx-1">
                   <div className="flex gap-2 items-center">
                     <input 
                       type="text"
@@ -1659,11 +1652,24 @@ export default function App() {
                       onChange={(e) => setNewPlayerName(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
                     />
-                    <motion.button
-                      className="w-12 h-12 bg-accent text-white rounded-none shadow-none flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+                  </div>
+
+                  {/* Buttons Row Inside Card */}
+                  <div className="flex gap-2 w-full">
+                    <motion.button 
                       onClick={addPlayer}
+                      className="flex-1 h-11 text-[11px] font-bold text-accent-blue uppercase tracking-widest bg-accent-blue/10 rounded-none border border-accent-blue/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                     >
-                      <Plus className="w-6 h-6" />
+                      <Plus className="w-3.5 h-3.5" />
+                      {t.adicionarJogador}
+                    </motion.button>
+
+                    <motion.button 
+                      onClick={handleDraft}
+                      className="flex-1 h-11 text-[11px] font-bold text-accent uppercase tracking-widest bg-accent/10 rounded-none border border-accent/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      {t.sorteio}
                     </motion.button>
                   </div>
                 </div>
@@ -2722,50 +2728,47 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
   const StatItem = ({ label, category, value, isPoint = false, step = 1 }: any) => {
     return (
       <div className="flex flex-col gap-1.5 p-2 bg-white/5 rounded-none border border-white/10">
-        <span className="text-xs font-display text-text-secondary uppercase tracking-wider text-center">{label}</span>
+        <div className="flex items-center justify-between px-0.5">
+          <span className="text-[9px] font-display font-bold text-text-secondary uppercase tracking-widest">{label}</span>
+          <div className="font-display font-bold leading-none">
+            <span className="text-[11px] font-black text-text-primary">{isPoint ? value.made : value}</span>
+            {isPoint && <span className="text-[9px] text-text-secondary font-medium ml-0.5">/{value.made + value.missed}</span>}
+          </div>
+        </div>
         
-        {isPoint ? (
-          <div className="flex flex-col gap-2">
-              <div className="text-center font-display font-bold">
-                <span className="text-sm font-black text-text-primary">{value.made}</span>
-                <span className="text-[10px] text-text-secondary font-medium ml-1">/{value.made + value.missed}</span>
-              </div>
-            <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-2 gap-1.5">
+          {isPoint ? (
+            <>
               <button 
                 onClick={() => updatePlayerStat(player.id, category, 'missed', 1)}
-                className="h-6 bg-red-500/10 text-red-500 border border-red-500/20 rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center order-1"
+                className="h-6 bg-red-500/10 text-red-500 border border-red-500/20 rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center"
               >
                 -{step}
               </button>
               <button 
                 onClick={() => updatePlayerStat(player.id, category, 'made', 1)}
-                className="h-6 bg-green-500/10 text-green-500 border border-green-500/20 rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center order-2"
+                className="h-6 bg-green-500/10 text-green-500 border border-green-500/20 rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center"
               >
                 +{step}
               </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <div className="text-center font-display font-bold">
-              <span className="text-sm font-black text-text-primary">{value}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
+            </>
+          ) : (
+            <>
               <button 
                 onClick={() => updatePlayerStat(player.id, category, -1)}
-                className="h-6 bg-bg-card text-text-secondary border border-border rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center order-1"
+                className="h-6 bg-bg-card text-text-secondary border border-border rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center"
               >
                 <Minus className="w-3.5 h-3.5" />
               </button>
               <button 
                 onClick={() => updatePlayerStat(player.id, category, 1)}
-                className="h-6 bg-accent/10 text-accent border border-accent/20 rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center order-2"
+                className="h-6 bg-accent/10 text-accent border border-accent/20 rounded-none text-xs font-black active:scale-95 transition-all flex items-center justify-center"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
-            </div>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
     );
   };

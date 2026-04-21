@@ -2705,7 +2705,7 @@ function PlayerBadge({ player, isSelected, onClick }: any) {
           : 'bg-white/[0.04] text-text-primary border-white/10 hover:border-accent/40'
       }`}
     >
-      <span className={`w-5 h-5 rounded-none flex items-center justify-center text-[9px] font-display font-bold ${isSelected ? 'bg-black/60 text-white' : 'bg-bg-card shadow-none text-accent'}`}>
+      <span className={`w-5 h-5 rounded-none flex items-center justify-center text-[11px] font-display font-bold ${isSelected ? 'bg-black/60 text-white' : 'bg-bg-card shadow-none text-accent'}`}>
         {player.number || '00'}
       </span>
       <span className="tracking-tight">{player.name}</span>
@@ -2729,10 +2729,10 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
     return (
       <div className="flex flex-col gap-1.5 p-2 bg-white/5 rounded-none border border-white/10">
         <div className="flex items-center justify-between px-0.5">
-          <span className="text-[9px] font-display font-bold text-text-secondary uppercase tracking-widest">{label}</span>
+          <span className="text-[11px] font-display font-bold text-text-secondary uppercase tracking-widest">{label}</span>
           <div className="font-display font-bold leading-none">
-            <span className="text-[11px] font-black text-text-primary">{isPoint ? value.made : value}</span>
-            {isPoint && <span className="text-[9px] text-text-secondary font-medium ml-0.5">/{value.made + value.missed}</span>}
+            <span className="text-[13px] font-black text-text-primary">{isPoint ? value.made : value}</span>
+            {isPoint && <span className="text-[10px] text-text-secondary font-medium ml-0.5">/{value.made + value.missed}</span>}
           </div>
         </div>
         
@@ -2788,7 +2788,7 @@ function PlayerStatCard({ player, gameMode, t, updatePlayerStat, removePlayer }:
               </p>
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-[9px] font-display font-bold text-accent uppercase tracking-widest">
+              <p className="text-[12px] font-display font-bold text-accent uppercase tracking-widest">
                 {totalPoints} {t.pts}
               </p>
             </div>

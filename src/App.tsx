@@ -33,7 +33,8 @@ import {
   User as UserIcon,
   Shield,
   Medal,
-  List
+  List,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -183,6 +184,8 @@ const TRANSLATIONS: any = {
     jogadoresInsuficientes: 'Jogadores insuficientes!',
     fechar: 'Fechar',
     limparSorteio: 'Limpar Sorteio',
+    limparJogadores: 'Limpar Jogadores',
+    confirmarLimparJogadores: 'Deseja apagar todos os jogadores e estatísticas?',
     tempoNaoEditavel: 'O tempo só pode ser alterado antes do início do jogo.',
     campeonato: 'Campeonato',
     nomeCampeonato: 'Nome do Campeonato',
@@ -287,6 +290,8 @@ const TRANSLATIONS: any = {
     jogadoresInsuficientes: 'Insufficient players!',
     fechar: 'Close',
     limparSorteio: 'Clear Draft',
+    limparJogadores: 'Clear Players',
+    confirmarLimparJogadores: 'Do you want to delete all players and statistics?',
     tempoNaoEditavel: 'Time can only be changed before the game starts.',
     campeonato: 'Tournament',
     nomeCampeonato: 'Tournament Name',
@@ -389,6 +394,8 @@ const TRANSLATIONS: any = {
     jogadoresInsuficientes: '¡Jugadores insuficientes!',
     fechar: 'Cerrar',
     limparSorteio: 'Limpiar Sorteo',
+    limparJogadores: 'Limpiar Jugadores',
+    confirmarLimparJogadores: '¿Desea eliminar todos los jugadores y estadísticas?',
     tempoNaoEditavel: 'El tiempo solo se puede cambiar antes de que comience el juego.',
     campeonato: 'CAMPEONATO',
     nomeCampeonato: 'Nombre del Campeonato',
@@ -500,6 +507,7 @@ export default function App() {
   });
   const [isEditingTime, setIsEditingTime] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showPlayersResetConfirm, setShowPlayersResetConfirm] = useState(false);
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [drawnTeams, setDrawnTeams] = useState<Player[][]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
@@ -974,6 +982,14 @@ export default function App() {
     setTournamentSettings({ name: '', organizer: '', date: '' });
     setShowTournamentResetConfirm(false);
     setToast({ message: language === 'pt' ? 'Campeonato reiniciado' : 'Tournament reset', type: 'info' });
+  };
+
+  const resetPlayers = () => {
+    setPlayers([]);
+    setDrawnTeams([]);
+    setSelectedPlayerId(null);
+    setShowPlayersResetConfirm(false);
+    setToast({ message: language === 'pt' ? 'Jogadores removidos' : 'Players removed', type: 'info' });
   };
 
   const transferToScoreboard = (match: TournamentMatch) => {
@@ -1641,7 +1657,19 @@ export default function App() {
                 </div>
 
                 {/* Add Player Form */}
-                <div className="glass-card rounded-none p-4 flex flex-col gap-4 mx-1">
+                <div className="glass-card rounded-none p-4 flex flex-col gap-4 mx-1 relative overflow-visible">
+                  {players.length > 0 && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setShowPlayersResetConfirm(true)}
+                      className="absolute -top-3 -right-2 w-8 h-8 bg-red-500 text-white rounded-none shadow-lg flex items-center justify-center z-10 hover:bg-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </motion.button>
+                  )}
+                  
                   <div className="flex gap-2 items-center">
                     <input 
                       type="text"
@@ -2267,6 +2295,19 @@ export default function App() {
             message={t.confirmarReiniciarCampeonato}
             onConfirm={resetTournament}
             onCancel={() => setShowTournamentResetConfirm(false)}
+            t={t}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Players Reset Confirmation Modal */}
+      <AnimatePresence>
+        {showPlayersResetConfirm && (
+          <ConfirmModal 
+            title={t.limparJogadores}
+            message={t.confirmarLimparJogadores}
+            onConfirm={resetPlayers}
+            onCancel={() => setShowPlayersResetConfirm(false)}
             t={t}
           />
         )}

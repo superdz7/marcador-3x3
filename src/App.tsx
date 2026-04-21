@@ -681,46 +681,63 @@ export default function App() {
     const filter = ctx.createBiquadFilter();
     
     if (isGameEnd) {
-      const duration = 1.5;
-      filter.type = 'highpass';
-      filter.frequency.setValueAtTime(400, ctx.currentTime);
+      const duration = 2.5; // Longer duration for game end
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(2000, ctx.currentTime);
       
       masterGain.gain.setValueAtTime(0, ctx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 0.05);
-      masterGain.gain.setValueAtTime(0.6, ctx.currentTime + duration - 0.1);
+      masterGain.gain.linearRampToValueAtTime(1.0, ctx.currentTime + 0.05); // Increased volume from 0.6 to 1.0
+      masterGain.gain.setValueAtTime(1.0, ctx.currentTime + duration - 0.5);
       masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
       
       masterGain.connect(filter);
       filter.connect(ctx.destination);
 
-      const baseFreq = 220; 
-      [1, 1.2, 1.5, 2, 2.5, 3, 4].forEach(harmonic => {
+      // Create a more dramatic "stadium" buzzer sound
+      const frequencies = [100, 150, 200, 250, 300, 450, 600]; 
+      frequencies.forEach((freq, idx) => {
         const osc = ctx.createOscillator();
-        osc.type = harmonic % 2 === 0 ? 'square' : 'sawtooth';
-        osc.frequency.setValueAtTime(baseFreq * harmonic, ctx.currentTime);
-        osc.detune.setValueAtTime(Math.random() * 30 - 15, ctx.currentTime);
+        osc.type = idx % 2 === 0 ? 'sawtooth' : 'square';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        
+        // Add some vibrato for realism
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfo.frequency.setValueAtTime(5, ctx.currentTime);
+        lfoGain.gain.setValueAtTime(5, ctx.currentTime);
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+        
         osc.connect(masterGain);
+        lfo.start();
         osc.start();
+        lfo.stop(ctx.currentTime + duration);
         osc.stop(ctx.currentTime + duration);
       });
     } else {
-      // Shot clock buzzer - HD & Louder
-      const duration = 0.8;
+      // Shot clock buzzer - HD & Loud "Bzzz"
+      const duration = 1.0; 
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(3000, ctx.currentTime);
+      filter.frequency.setValueAtTime(4000, ctx.currentTime);
 
       masterGain.gain.setValueAtTime(0, ctx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(1.0, ctx.currentTime + 0.02);
+      masterGain.gain.linearRampToValueAtTime(1.0, ctx.currentTime + 0.01);
+      masterGain.gain.setValueAtTime(1.0, ctx.currentTime + duration - 0.2);
       masterGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
       
       masterGain.connect(filter);
       filter.connect(ctx.destination);
 
-      // Richer sound with multiple frequencies
-      [660, 880, 1320].forEach(freq => {
+      // Higher frequency harsh buzz
+      const freqs = [350, 440, 554, 660, 880];
+      freqs.forEach((freq, idx) => {
         const osc = ctx.createOscillator();
-        osc.type = 'square';
+        osc.type = 'square'; // Square waves provide that classic harsh "bzzzt"
         osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        
+        // Slight detune for thickness
+        osc.detune.setValueAtTime(Math.random() * 40 - 20, ctx.currentTime);
+        
         osc.connect(masterGain);
         osc.start();
         osc.stop(ctx.currentTime + duration);
@@ -848,58 +865,12 @@ export default function App() {
   };
 
   const updateMatchResult = (matchId: string, hScore: number, vScore: number) => {
-    let updatedMatches = tournamentMatches.map(m => {
+    setTournamentMatches(prev => prev.map(m => {
         if (m.id === matchId) {
             return { ...m, homeScore: hScore, visitorScore: vScore, status: 'finished' };
         }
         return m;
-    });
-
-    const finishedMatch = updatedMatches.find(m => m.id === matchId)!;
-
-    // Logic for Group Advancement
-    if (finishedMatch.round === 'group') {
-        const groupAMatches = updatedMatches.filter(m => m.id.startsWith('GA-'));
-        const groupBMatches = updatedMatches.filter(m => m.id.startsWith('GB-'));
-        
-        const allGroupADone = groupAMatches.every(m => m.status === 'finished');
-        const allGroupBDone = groupBMatches.every(m => m.status === 'finished');
-
-        if (allGroupADone) {
-            const teamsA = calculateGroupStandings('A', updatedMatches);
-            updatedMatches = updatedMatches.map(m => {
-                if (m.id === 'S1') return { ...m, homeTeamId: teamsA[0].id };
-                if (m.id === 'S2') return { ...m, visitorTeamId: teamsA[1].id };
-                return m;
-            });
-        }
-        
-        if (allGroupBDone) {
-            const teamsB = calculateGroupStandings('B', updatedMatches);
-            updatedMatches = updatedMatches.map(m => {
-                if (m.id === 'S1') return { ...m, visitorTeamId: teamsB[1].id };
-                if (m.id === 'S2') return { ...m, homeTeamId: teamsB[0].id };
-                return m;
-            });
-        }
-    } else if (finishedMatch.round === 'semis') {
-        const hId = finishedMatch.homeTeamId;
-        const vId = finishedMatch.visitorTeamId;
-        const winnerId = hScore > vScore ? hId : vId;
-        const loserId = hScore > vScore ? vId : hId;
-
-        updatedMatches = updatedMatches.map(m => {
-            if (m.id === 'F1') {
-                return { ...m, [finishedMatch.matchNumber === 1 ? 'homeTeamId' : 'visitorTeamId']: winnerId };
-            }
-            if (m.id === 'T1') {
-                return { ...m, [finishedMatch.matchNumber === 1 ? 'homeTeamId' : 'visitorTeamId']: loserId };
-            }
-            return m;
-        });
-    }
-
-    setTournamentMatches(updatedMatches);
+    }));
   };
 
   const calculateGroupStandings = (group: 'A' | 'B', matches: TournamentMatch[]) => {
@@ -1158,6 +1129,77 @@ export default function App() {
   };
 
   // --- Effects ---
+
+  // Automatic Tournament Progression
+  useEffect(() => {
+    if (tournamentMatches.length === 0) return;
+
+    let updated = false;
+    let newMatches = [...tournamentMatches];
+
+    // 1. Group Stage -> Semis
+    const groupAMatches = newMatches.filter(m => m.round === 'group' && m.id.startsWith('GA-'));
+    const groupBMatches = newMatches.filter(m => m.round === 'group' && m.id.startsWith('GB-'));
+    
+    if (groupAMatches.length > 0 && groupAMatches.every(m => m.status === 'finished')) {
+      const teamsA = calculateGroupStandings('A', newMatches);
+      const s1 = newMatches.find(m => m.id === 'S1');
+      const s2 = newMatches.find(m => m.id === 'S2');
+      
+      if (s1 && s1.homeTeamId !== teamsA[0].id) {
+        newMatches = newMatches.map(m => m.id === 'S1' ? { ...m, homeTeamId: teamsA[0].id } : m);
+        updated = true;
+      }
+      if (s2 && s2.visitorTeamId !== teamsA[1].id) {
+        newMatches = newMatches.map(m => m.id === 'S2' ? { ...m, visitorTeamId: teamsA[1].id } : m);
+        updated = true;
+      }
+    }
+
+    if (groupBMatches.length > 0 && groupBMatches.every(m => m.status === 'finished')) {
+      const teamsB = calculateGroupStandings('B', newMatches);
+      const s1 = newMatches.find(m => m.id === 'S1');
+      const s2 = newMatches.find(m => m.id === 'S2');
+      
+      if (s1 && s1.visitorTeamId !== teamsB[1].id) {
+        newMatches = newMatches.map(m => m.id === 'S1' ? { ...m, visitorTeamId: teamsB[1].id } : m);
+        updated = true;
+      }
+      if (s2 && s2.homeTeamId !== teamsB[0].id) {
+        newMatches = newMatches.map(m => m.id === 'S2' ? { ...m, homeTeamId: teamsB[0].id } : m);
+        updated = true;
+      }
+    }
+
+    // 2. Semis -> Final & 3rd Place
+    const finishedSemis = newMatches.filter(m => m.round === 'semis' && m.status === 'finished');
+    if (finishedSemis.length > 0) {
+      finishedSemis.forEach(semi => {
+        const winnerId = semi.homeScore > semi.visitorScore ? semi.homeTeamId : semi.visitorTeamId;
+        const loserId = semi.homeScore > semi.visitorScore ? semi.visitorTeamId : semi.homeTeamId;
+        const matchNum = semi.matchNumber;
+
+        // Final match
+        const final = newMatches.find(m => m.id === 'F1');
+        const finalField = matchNum === 1 ? 'homeTeamId' : 'visitorTeamId';
+        if (final && final[finalField] !== winnerId) {
+          newMatches = newMatches.map(m => m.id === 'F1' ? { ...m, [finalField]: winnerId } : m);
+          updated = true;
+        }
+
+        // 3rd place match
+        const third = newMatches.find(m => m.id === 'T1');
+        if (third && third[finalField] !== loserId) {
+          newMatches = newMatches.map(m => m.id === 'T1' ? { ...m, [finalField]: loserId } : m);
+          updated = true;
+        }
+      });
+    }
+
+    if (updated) {
+      setTournamentMatches(newMatches);
+    }
+  }, [tournamentMatches, tournamentTeams, gameMode]);
 
   // Toast effect
   useEffect(() => {
@@ -1588,10 +1630,10 @@ export default function App() {
                 <div className="flex justify-between items-center px-1">
                   <h3 className="text-xs font-bold text-text-primary uppercase tracking-[0.2em]">{t.historico}</h3>
                   <motion.button
-                    className="p-2 bg-accent/10 text-accent rounded-none shadow-none flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest active:scale-95 transition-transform border border-accent/20"
+                    className="px-3 py-1.5 bg-accent/10 text-accent rounded-none shadow-none flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest active:scale-95 transition-transform border border-accent/20"
                     onClick={shareHistory}
                   >
-                    <Copy className="w-3.5 h-3.5" />
+                    <Copy className="w-3 h-3" />
                     {t.copiar}
                   </motion.button>
                 </div>
@@ -1685,19 +1727,19 @@ export default function App() {
                   {/* Buttons Row Inside Card */}
                   <div className="flex gap-2 w-full">
                     <motion.button 
-                      onClick={addPlayer}
-                      className="flex-1 h-11 text-[11px] font-bold text-accent-blue uppercase tracking-widest bg-accent-blue/10 rounded-none border border-accent-blue/20 active:scale-95 transition-all flex items-center justify-center gap-2"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      {t.adicionarJogador}
-                    </motion.button>
-
-                    <motion.button 
                       onClick={handleDraft}
                       className="flex-1 h-11 text-[11px] font-bold text-accent uppercase tracking-widest bg-accent/10 rounded-none border border-accent/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                     >
                       <Users className="w-3.5 h-3.5" />
                       {t.sorteio}
+                    </motion.button>
+
+                    <motion.button 
+                      onClick={addPlayer}
+                      className="flex-1 h-11 text-[11px] font-bold text-accent-blue uppercase tracking-widest bg-accent-blue/10 rounded-none border border-accent-blue/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      {t.adicionarJogador}
                     </motion.button>
                   </div>
                 </div>
@@ -2053,7 +2095,7 @@ export default function App() {
           <div className="flex-1 flex flex-col gap-6 min-h-0 mb-4 pb-20 lg:max-w-4xl lg:mx-auto lg:w-full">
             <div className="flex justify-between items-center px-1">
               <motion.button
-                className="p-3 bg-accent text-white rounded-none shadow-none flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest active:scale-95 transition-transform ml-auto"
+                className="px-4 py-2.5 bg-accent text-white rounded-none shadow-none flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest active:scale-95 transition-transform ml-auto"
                 onClick={shareHistory}
               >
                 <History className="w-4 h-4" />
@@ -2909,7 +2951,7 @@ function MenuItem({ icon, label, active, onClick }: any) {
       }`}
     >
       <div className={`${active ? 'text-accent' : 'text-text-secondary group-hover:text-accent transition-colors'}`}>{icon}</div>
-      <span className="text-xs tracking-[0.2em] font-bold uppercase">{label}</span>
+      <span className="text-[10px] tracking-[0.15em] font-bold uppercase whitespace-nowrap">{label}</span>
       {active && (
         <motion.div 
           layoutId="active-dot"

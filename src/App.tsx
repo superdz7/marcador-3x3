@@ -87,7 +87,7 @@ interface TournamentTeam {
   pointsFor: number;
   pointsAgainst: number;
   points: number; // Classification points
-  group: 'A' | 'B' | null;
+  group: 'A' | 'B' | 'C' | 'D' | null;
 }
 
 interface TournamentMatch {
@@ -97,7 +97,7 @@ interface TournamentMatch {
   homeScore: number;
   visitorScore: number;
   status: 'pending' | 'finished';
-  round: 'group' | 'semis' | 'final' | 'third';
+  round: 'group' | 'quarters' | 'semis' | 'final' | 'third';
   matchNumber: number;
 }
 
@@ -217,10 +217,11 @@ const TRANSLATIONS: any = {
     final: 'Final',
     terceiroLugar: '3º Lugar',
     vencedor: 'Vencedor',
-    sortearChaves: 'Adicione 4 ou 8 times e sorteie as chaves',
+    sortearChaves: 'Adicione 4, 8 ou 16 times e sorteie as chaves',
     podioFinal: 'Pódio Final',
     campeao: 'CAMPEÃO',
-    minimoTimesParaSortear: 'Mínimo 4 ou 8 para sortear',
+    minimoTimesParaSortear: 'Mínimo 4, 8 ou 16 para sortear',
+    melhorVisualizacao: 'O modo campeonato fica melhor visualizado em tablets ou computadores.',
   },
   en: {
     placar: 'SCOREBOARD',
@@ -323,10 +324,11 @@ const TRANSLATIONS: any = {
     final: 'Final',
     terceiroLugar: '3rd Place',
     vencedor: 'Winner',
-    sortearChaves: 'Add 4 or 8 teams and draw the matches',
+    sortearChaves: 'Add 4, 8 or 16 teams and draw the matches',
     podioFinal: 'Final Podium',
     campeao: 'CHAMPION',
-    minimoTimesParaSortear: 'Min 4 or 8 to draw',
+    minimoTimesParaSortear: 'Min 4, 8 or 16 to draw',
+    melhorVisualizacao: 'Tournament mode is best viewed on tablets or computers.',
   },
   es: {
     placar: 'MARCADOR',
@@ -427,10 +429,11 @@ const TRANSLATIONS: any = {
     final: 'Final',
     terceiroLugar: '3º Lugar',
     vencedor: 'Ganador',
-    sortearChaves: 'Añade 4 u 8 equipos y sortea las eliminatorias',
+    sortearChaves: 'Añade 4, 8 o 16 equipos y sortea las eliminatorias',
     podioFinal: 'Podio Final',
     campeao: 'CAMPEÓN',
-    minimoTimesParaSortear: 'Mínimo 4 u 8 para sortear',
+    minimoTimesParaSortear: 'Mínimo 4, 8 o 16 para sortear',
+    melhorVisualizacao: 'El modo campeonato se visualiza melhor en tablets o computadoras.',
   }
 };
 
@@ -770,8 +773,8 @@ export default function App() {
   };
 
   const addTournamentTeam = (name: string) => {
-    if (tournamentTeams.length >= 8) {
-      setToast({ message: language === 'pt' ? 'Máximo de 8 times atingido' : 'Max 8 teams reached', type: 'error' });
+    if (tournamentTeams.length >= 16) {
+      setToast({ message: language === 'pt' ? 'Máximo de 16 times atingido' : 'Max 16 teams reached', type: 'error' });
       return;
     }
     if (!name.trim()) return;
@@ -797,15 +800,58 @@ export default function App() {
   };
 
   const drawTournamentMatches = () => {
-    if (tournamentTeams.length !== 4 && tournamentTeams.length !== 8) {
-        setToast({ message: language === 'pt' ? 'É necessário adicionar 4 ou 8 times' : 'Need 4 or 8 teams to start', type: 'error' });
+    if (tournamentTeams.length !== 4 && tournamentTeams.length !== 8 && tournamentTeams.length !== 16) {
+        setToast({ message: language === 'pt' ? 'É necessário adicionar 4, 8 ou 16 times' : 'Need 4, 8 or 16 teams to start', type: 'error' });
         return;
     }
     
     const shuffledTeams = [...tournamentTeams].sort(() => Math.random() - 0.5);
     const matches: TournamentMatch[] = [];
 
-    if (tournamentTeams.length === 8) {
+    if (tournamentTeams.length === 16) {
+        const groupA = shuffledTeams.slice(0, 4);
+        const groupB = shuffledTeams.slice(4, 8);
+        const groupC = shuffledTeams.slice(8, 12);
+        const groupD = shuffledTeams.slice(12, 16);
+
+        setTournamentTeams(prev => prev.map(t => {
+            if (groupA.find(ga => ga.id === t.id)) return { ...t, group: 'A' };
+            if (groupB.find(gb => gb.id === t.id)) return { ...t, group: 'B' };
+            if (groupC.find(gc => gc.id === t.id)) return { ...t, group: 'C' };
+            if (groupD.find(gd => gd.id === t.id)) return { ...t, group: 'D' };
+            return t;
+        }));
+
+        // Group A, B, C, D Matches
+        ['A', 'B', 'C', 'D'].forEach((gName, gIdx) => {
+            const gTeams = shuffledTeams.slice(gIdx * 4, (gIdx + 1) * 4);
+            for (let i = 0; i < 4; i++) {
+                for (let j = i + 1; j < 4; j++) {
+                    matches.push({
+                        id: `G${gName}-${i}${j}`,
+                        homeTeamId: gTeams[i].id,
+                        visitorTeamId: gTeams[j].id,
+                        homeScore: 0,
+                        visitorScore: 0,
+                        status: 'pending',
+                        round: 'group',
+                        matchNumber: matches.length + 1
+                    });
+                }
+            }
+        });
+
+        // Quarters (placeholders)
+        matches.push({ id: 'Q1', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'quarters', matchNumber: 1 });
+        matches.push({ id: 'Q2', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'quarters', matchNumber: 2 });
+        matches.push({ id: 'Q3', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'quarters', matchNumber: 3 });
+        matches.push({ id: 'Q4', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'quarters', matchNumber: 4 });
+
+        // Semis (placeholders)
+        matches.push({ id: 'S1', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'semis', matchNumber: 1 });
+        matches.push({ id: 'S2', homeTeamId: null, visitorTeamId: null, homeScore: 0, visitorScore: 0, status: 'pending', round: 'semis', matchNumber: 2 });
+
+    } else if (tournamentTeams.length === 8) {
         const groupA = shuffledTeams.slice(0, 4);
         const groupB = shuffledTeams.slice(4, 8);
 
@@ -876,7 +922,7 @@ export default function App() {
     }));
   };
 
-  const calculateGroupStandings = (group: 'A' | 'B', matches: TournamentMatch[]) => {
+  const calculateGroupStandings = (group: 'A' | 'B' | 'C' | 'D', matches: TournamentMatch[]) => {
     const groupTeams = tournamentTeams.filter(t => t.group === group);
     const finishedMatches = matches.filter(m => m.round === 'group' && m.status === 'finished');
 
@@ -1146,41 +1192,71 @@ export default function App() {
     let updated = false;
     let newMatches = [...tournamentMatches];
 
-    // 1. Group Stage -> Semis
-    const groupAMatches = newMatches.filter(m => m.round === 'group' && m.id.startsWith('GA-'));
-    const groupBMatches = newMatches.filter(m => m.round === 'group' && m.id.startsWith('GB-'));
+    // 1. Group Stage -> Quarters or Semis
+    const groups = ['A', 'B', 'C', 'D'] as const;
     
-    if (groupAMatches.length > 0 && groupAMatches.every(m => m.status === 'finished')) {
-      const teamsA = calculateGroupStandings('A', newMatches);
-      const s1 = newMatches.find(m => m.id === 'S1');
-      const s2 = newMatches.find(m => m.id === 'S2');
-      
-      if (s1 && s1.homeTeamId !== teamsA[0].id) {
-        newMatches = newMatches.map(m => m.id === 'S1' ? { ...m, homeTeamId: teamsA[0].id } : m);
-        updated = true;
+    groups.forEach(groupName => {
+      const groupMatches = newMatches.filter(m => m.round === 'group' && m.id.startsWith(`G${groupName}-`));
+      if (groupMatches.length > 0 && groupMatches.every(m => m.status === 'finished')) {
+        const standings = calculateGroupStandings(groupName, newMatches);
+        
+        if (tournamentTeams.length === 16) {
+          // Into Quarters
+          // Q1: 1A vs 2B
+          // Q2: 1C vs 2D
+          // Q3: 1B vs 2A
+          // Q4: 1D vs 2C
+          
+          if (groupName === 'A') {
+            newMatches = newMatches.map(m => m.id === 'Q1' ? { ...m, homeTeamId: standings[0].id } : m);
+            newMatches = newMatches.map(m => m.id === 'Q3' ? { ...m, visitorTeamId: standings[1].id } : m);
+            updated = true;
+          } else if (groupName === 'B') {
+            newMatches = newMatches.map(m => m.id === 'Q3' ? { ...m, homeTeamId: standings[0].id } : m);
+            newMatches = newMatches.map(m => m.id === 'Q1' ? { ...m, visitorTeamId: standings[1].id } : m);
+            updated = true;
+          } else if (groupName === 'C') {
+            newMatches = newMatches.map(m => m.id === 'Q2' ? { ...m, homeTeamId: standings[0].id } : m);
+            newMatches = newMatches.map(m => m.id === 'Q4' ? { ...m, visitorTeamId: standings[1].id } : m);
+            updated = true;
+          } else if (groupName === 'D') {
+            newMatches = newMatches.map(m => m.id === 'Q4' ? { ...m, homeTeamId: standings[0].id } : m);
+            newMatches = newMatches.map(m => m.id === 'Q2' ? { ...m, visitorTeamId: standings[1].id } : m);
+            updated = true;
+          }
+        } else if (tournamentTeams.length === 8) {
+          // Into Semis
+          if (groupName === 'A') {
+            newMatches = newMatches.map(m => m.id === 'S1' ? { ...m, homeTeamId: standings[0].id } : m);
+            newMatches = newMatches.map(m => m.id === 'S2' ? { ...m, visitorTeamId: standings[1].id } : m);
+            updated = true;
+          } else if (groupName === 'B') {
+            newMatches = newMatches.map(m => m.id === 'S2' ? { ...m, homeTeamId: standings[0].id } : m);
+            newMatches = newMatches.map(m => m.id === 'S1' ? { ...m, visitorTeamId: standings[1].id } : m);
+            updated = true;
+          }
+        }
       }
-      if (s2 && s2.visitorTeamId !== teamsA[1].id) {
-        newMatches = newMatches.map(m => m.id === 'S2' ? { ...m, visitorTeamId: teamsA[1].id } : m);
-        updated = true;
-      }
+    });
+
+    // 2. Quarters -> Semis (Only for 16 teams)
+    if (tournamentTeams.length === 16) {
+      const quarters = newMatches.filter(m => m.round === 'quarters' && m.status === 'finished');
+      quarters.forEach(q => {
+        const winnerId = q.homeScore > q.visitorScore ? q.homeTeamId : q.visitorTeamId;
+        if (q.id === 'Q1' || q.id === 'Q2') {
+          const targetField = q.id === 'Q1' ? 'homeTeamId' : 'visitorTeamId';
+          newMatches = newMatches.map(m => m.id === 'S1' ? { ...m, [targetField]: winnerId } : m);
+          updated = true;
+        } else if (q.id === 'Q3' || q.id === 'Q4') {
+          const targetField = q.id === 'Q3' ? 'homeTeamId' : 'visitorTeamId';
+          newMatches = newMatches.map(m => m.id === 'S2' ? { ...m, [targetField]: winnerId } : m);
+          updated = true;
+        }
+      });
     }
 
-    if (groupBMatches.length > 0 && groupBMatches.every(m => m.status === 'finished')) {
-      const teamsB = calculateGroupStandings('B', newMatches);
-      const s1 = newMatches.find(m => m.id === 'S1');
-      const s2 = newMatches.find(m => m.id === 'S2');
-      
-      if (s1 && s1.visitorTeamId !== teamsB[1].id) {
-        newMatches = newMatches.map(m => m.id === 'S1' ? { ...m, visitorTeamId: teamsB[1].id } : m);
-        updated = true;
-      }
-      if (s2 && s2.homeTeamId !== teamsB[0].id) {
-        newMatches = newMatches.map(m => m.id === 'S2' ? { ...m, homeTeamId: teamsB[0].id } : m);
-        updated = true;
-      }
-    }
-
-    // 2. Semis -> Final & 3rd Place
+    // 3. Semis -> Final & 3rd Place
     const finishedSemis = newMatches.filter(m => m.round === 'semis' && m.status === 'finished');
     if (finishedSemis.length > 0) {
       finishedSemis.forEach(semi => {
@@ -1835,6 +1911,14 @@ export default function App() {
           {/* Campeonato Tab (Standalone) */}
           {activeTab === 'campeonato' && (
             <div className="flex-1 flex flex-col gap-6 min-h-0 mb-4 pb-20 overflow-y-auto no-scrollbar">
+              {/* Informational Message */}
+              <div className="flex items-center gap-2 px-1 opacity-60">
+                <MonitorSmartphone className="w-3 h-3 text-accent" />
+                <p className="text-[10px] font-medium text-text-secondary italic">
+                  {t.melhorVisualizacao}
+                </p>
+              </div>
+
               {/* Header Info */}
               <div className="glass-card p-2 flex flex-col gap-2">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1883,7 +1967,7 @@ export default function App() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Users className="w-4 h-4 text-accent" />
-                    <h3 className="text-xs font-bold text-text-primary uppercase tracking-[0.15em]">{t.times} ({tournamentTeams.length}/8)</h3>
+                    <h3 className="text-xs font-bold text-text-primary uppercase tracking-[0.15em]">{t.times} ({tournamentTeams.length}/16)</h3>
                     <p className="text-[9px] text-text-secondary uppercase tracking-widest mt-0.5 opacity-50">{t.minimoTimesParaSortear}</p>
                   </div>
                 </div>
@@ -1950,10 +2034,10 @@ export default function App() {
 
                 {tournamentMatches.length > 0 && (
                   <div className="space-y-12">
-                    {/* Groups Section (Only if 8 teams) */}
-                    {tournamentTeams.length === 8 && (
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                      {['A', 'B'].map(groupName => (
+                    {/* Groups Section (Only if 8 or 16 teams) */}
+                    {(tournamentTeams.length === 8 || tournamentTeams.length === 16) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {['A', 'B', 'C', 'D'].filter(g => tournamentMatches.some(m => m.round === 'group' && m.id.startsWith(`G${g}-`))).map(groupName => (
                         <div key={groupName} className="glass-card p-4 flex flex-col gap-6">
                           <div className="flex items-center justify-between border-b border-white/5 pb-3">
                             <h4 className="text-xs font-black text-text-primary uppercase tracking-widest">Grupo {groupName}</h4>
@@ -1975,7 +2059,7 @@ export default function App() {
                                 </tr>
                               </thead>
                               <tbody>
-                                {calculateGroupStandings(groupName as 'A' | 'B', tournamentMatches).map((team, idx) => (
+                                {calculateGroupStandings(groupName as any, tournamentMatches).map((team, idx) => (
                                   <tr key={team.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                                     <td className="py-3 text-[11px] font-bold text-text-secondary pr-4">{idx + 1}</td>
                                     <td className="py-3 text-[11px] font-bold text-text-primary uppercase tracking-widest truncate max-w-[140px]">{team.name}</td>
@@ -2023,10 +2107,22 @@ export default function App() {
                       </div>
                       
                       <div className="flex flex-col lg:flex-row gap-8 overflow-x-auto no-scrollbar pb-8 px-1">
-                        {/* Semis Column */}
+                        {/* Quarters Column (Only if 16 teams) */}
+                        {tournamentTeams.length === 16 && (
                         <div className="flex flex-col gap-8 min-w-[280px]">
-                          <h4 className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] text-center mb-2 border-b border-white/5 pb-2">{t.semifinais}</h4>
+                          <h4 className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] text-center mb-2 border-b border-white/5 pb-2">{t.quartas}</h4>
                           <div className="space-y-8">
+                            {tournamentMatches.filter(m => m.round === 'quarters').map(match => (
+                              <BracketMatch key={match.id} match={match} teams={tournamentTeams} onUpdateResult={updateMatchResult} onTransfer={transferToScoreboard} t={t} />
+                            ))}
+                          </div>
+                        </div>
+                        )}
+
+                        {/* Semis Column */}
+                        <div className={`flex flex-col gap-8 min-w-[280px] ${tournamentTeams.length === 16 ? 'lg:mt-4' : ''}`}>
+                          <h4 className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.2em] text-center mb-2 border-b border-white/5 pb-2">{t.semifinais}</h4>
+                          <div className={tournamentTeams.length === 16 ? "space-y-[120px] mt-8" : "space-y-8"}>
                             {tournamentMatches.filter(m => m.round === 'semis').map(match => (
                               <BracketMatch key={match.id} match={match} teams={tournamentTeams} onUpdateResult={updateMatchResult} onTransfer={transferToScoreboard} t={t} />
                             ))}
@@ -2034,7 +2130,7 @@ export default function App() {
                         </div>
 
                         {/* Final and 3rd Place Column */}
-                        <div className="flex flex-col gap-16 min-w-[280px] lg:mt-24">
+                        <div className={`flex flex-col gap-16 min-w-[280px] ${tournamentTeams.length === 16 ? 'lg:mt-28' : 'lg:mt-24'}`}>
                           <div>
                             <h4 className="text-[10px] font-bold text-accent uppercase tracking-[0.2em] text-center mb-2 border-b border-accent/20 pb-2">{t.final}</h4>
                             <div className="space-y-8">

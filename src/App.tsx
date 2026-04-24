@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   RotateCcw, 
   Play, 
@@ -34,12 +33,19 @@ import {
   Shield,
   Medal,
   List,
+  Monitor,
   Trash2,
-  TriangleAlert
+  TriangleAlert,
+  RectangleHorizontal
 } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // --- Types ---
+
+const MIcon = ({ name, className }: { name: string, className?: string }) => (
+  <span className={`material-symbols-outlined inline-flex items-center justify-center align-middle h-fit ${className}`}>{name}</span>
+);
 
 type Team = 'home' | 'visitor';
 
@@ -119,7 +125,7 @@ const TRANSLATIONS: any = {
   pt: {
     placar: 'Placar',
     historico: 'Histórico',
-    estatisticas: 'Desempenho / Sorteio',
+    estatisticas: 'Desempenho e Sorteio',
     opcoes: 'Opções',
     casa: 'CASA',
     visitante: 'VISITANTE',
@@ -1662,7 +1668,7 @@ export default function App() {
             <div className="hidden md:flex lg:hidden flex-1 flex-col gap-4 min-h-0 mt-4 pb-20">
               <div className="flex justify-between items-center px-1 shrink-0">
                 <div className="flex items-center gap-2">
-                  <History className="w-3.5 h-3.5 text-accent" />
+                  <MIcon name="history" className="w-3.5 h-3.5 text-accent" />
                   <h3 className="text-[10px] font-black text-text-primary uppercase tracking-[0.2em]">{t.historico}</h3>
                 </div>
                 <button
@@ -1676,7 +1682,7 @@ export default function App() {
               <div className="flex-1 glass-card p-4 overflow-y-auto no-scrollbar border-dashed border-white/10 bg-white/[0.01]">
                 {history.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-text-secondary gap-4 opacity-40">
-                    <History className="w-8 h-8 opacity-20" />
+                    <MIcon name="history" className="w-8 h-8 opacity-20" />
                     <p className="text-[10px] font-medium tracking-widest uppercase">{t.nenhumaAcao}</p>
                   </div>
                 ) : (
@@ -1726,7 +1732,7 @@ export default function App() {
                   {history.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-text-secondary gap-4 opacity-40 py-10">
                       <div className="w-12 h-12 bg-bg-secondary rounded-none flex items-center justify-center border border-border">
-                        <History className="w-6 h-6 opacity-30 text-accent" />
+                        <MIcon name="history" className="w-6 h-6 opacity-30 text-accent" />
                       </div>
                       <p className="text-xs font-medium tracking-tight">{t.nenhumaAcao}</p>
                     </div>
@@ -2222,7 +2228,7 @@ export default function App() {
                 className="px-4 py-2.5 bg-accent text-white rounded-none shadow-none flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest active:scale-95 transition-transform ml-auto"
                 onClick={shareHistory}
               >
-                <History className="w-4 h-4" />
+                <MIcon name="history" className="w-4 h-4" />
                 {t.copiar}
               </motion.button>
             </div>
@@ -2230,7 +2236,7 @@ export default function App() {
               {history.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-text-secondary gap-4 opacity-40">
                   <div className="w-16 h-16 bg-bg-secondary rounded-none flex items-center justify-center">
-                    <History className="w-8 h-8" />
+                    <MIcon name="history" className="w-8 h-8" />
                   </div>
                   <p className="text-sm font-medium tracking-tight">{t.nenhumaAcao}</p>
                 </div>
@@ -2593,22 +2599,22 @@ export default function App() {
 
               <div className="flex-1 flex flex-col gap-3">
                 <MenuItem 
-                  icon={<Dribbble className="w-5 h-5" />} 
+                  icon={<MIcon name="scoreboard" className="w-5 h-5" />} 
                   label={t.placar} 
                   active={activeTab === 'placar'} 
                   onClick={() => { setActiveTab('placar'); setIsMenuOpen(false); }} 
-                />
-                <MenuItem 
-                  icon={<BarChart3 className="w-5 h-5" />} 
-                  label={t.estatisticas} 
-                  active={activeTab === 'estatisticas'} 
-                  onClick={() => { setActiveTab('estatisticas'); setIsMenuOpen(false); }} 
                 />
                 <MenuItem 
                   icon={<History className="w-5 h-5" />} 
                   label={t.historico} 
                   active={activeTab === 'historico'} 
                   onClick={() => { setActiveTab('historico'); setIsMenuOpen(false); }} 
+                />
+                <MenuItem 
+                  icon={<BarChart3 className="w-5 h-5" />} 
+                  label={t.estatisticas} 
+                  active={activeTab === 'estatisticas'} 
+                  onClick={() => { setActiveTab('estatisticas'); setIsMenuOpen(false); }} 
                 />
                 <MenuItem 
                   icon={<Trophy className="w-5 h-5" />} 
@@ -2637,17 +2643,17 @@ export default function App() {
         <NavButton 
           active={activeTab === 'placar'} 
           onClick={() => { setActiveTab('placar'); setIsMenuOpen(false); }}
-          icon={<Dribbble className="w-5 h-5" />}
-        />
-        <NavButton 
-          active={activeTab === 'estatisticas'} 
-          onClick={() => { setActiveTab('estatisticas'); setIsMenuOpen(false); }}
-          icon={<BarChart3 className="w-5 h-5" />}
+          icon={<MIcon name="scoreboard" className="w-5 h-5" />}
         />
         <NavButton 
           active={activeTab === 'historico'} 
           onClick={() => { setActiveTab('historico'); setIsMenuOpen(false); }}
           icon={<History className="w-5 h-5" />}
+        />
+        <NavButton 
+          active={activeTab === 'estatisticas'} 
+          onClick={() => { setActiveTab('estatisticas'); setIsMenuOpen(false); }}
+          icon={<BarChart3 className="w-5 h-5" />}
         />
         <NavButton 
           active={activeTab === 'campeonato'} 

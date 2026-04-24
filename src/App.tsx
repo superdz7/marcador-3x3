@@ -1448,7 +1448,7 @@ export default function App() {
   }, [shotClock, isRunning, shotClockSoundEnabled, shotClockBuzzerPlayed]);
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-bg-deep to-black text-text-primary font-sans flex flex-col items-center select-none transition-colors duration-300 overflow-hidden">
+    <div className="min-h-screen text-text-primary font-sans flex flex-col items-center select-none transition-colors duration-300 overflow-hidden">
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (

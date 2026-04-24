@@ -2884,15 +2884,16 @@ function TeamCard({ label, name, onNameChange, score, onAdd1, onAdd2, onAdd3, t,
 }
 
 function FoulCard({ label, fouls, onAddFoul, t, gameMode, colorClass }: any) {
-  const bonusThreshold = 7;
-  const isCritical = fouls >= 7;
+  const isFibaNba = gameMode === 'fiba' || gameMode === 'nba';
+  const bonusThreshold = isFibaNba ? 5 : 7;
+  const isCritical = fouls >= bonusThreshold;
   const dotActiveColor = isCritical ? 'bg-red-500' : (colorClass === 'home' ? 'bg-accent-blue' : 'bg-accent-green');
   const labelColorFull = isCritical ? 'text-red-500/80' : (colorClass === 'home' ? 'text-accent-blue/80' : 'text-accent-green/80');
   
   return (
     <motion.div 
       className={`glass-card p-4 flex items-center justify-between cursor-pointer active:scale-95 transition-all duration-500 h-full ${
-        isCritical ? 'bg-red-500/10 border-red-500/30' : ''
+        isCritical ? 'bg-red-600/20 !border-red-600' : 'bg-white/5 border-border'
       }`}
       onClick={onAddFoul}
       whileTap={{ scale: 0.98 }}

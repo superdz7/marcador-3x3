@@ -1715,7 +1715,7 @@ export default function App() {
           </div>
 
           {/* Column 2: History/Stats (Always visible on lg if activeTab is placar/stats) */}
-          <div className={`flex-1 flex flex-col gap-6 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto no-scrollbar pb-32 lg:pb-4 ${activeTab === 'estatisticas' ? 'flex' : (activeTab === 'placar' ? 'hidden lg:flex' : 'hidden')}`}>
+          <div className={`flex-1 flex flex-col gap-2 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto no-scrollbar pb-32 lg:pb-4 ${activeTab === 'estatisticas' ? 'flex' : (activeTab === 'placar' ? 'hidden lg:flex' : 'hidden')}`}>
             {activeTab === 'placar' ? (
               <div className="flex-1 flex flex-col gap-6 min-h-0">
                 <div className="flex justify-between items-center px-1">
@@ -1793,6 +1793,28 @@ export default function App() {
               </div>
             ) : (
               <>
+                {(() => {
+                  const topPlayer = [...players].sort((a,b) => {
+                    const aPts = (a.stats.pts2.made * (gameMode === '3x3' ? 1 : 2)) + (a.stats.pts3.made * (gameMode === '3x3' ? 2 : 3)) + a.stats.ft.made;
+                    const bPts = (b.stats.pts2.made * (gameMode === '3x3' ? 1 : 2)) + (b.stats.pts3.made * (gameMode === '3x3' ? 2 : 3)) + b.stats.ft.made;
+                    return bPts - aPts;
+                  })[0];
+                  const pts = topPlayer ? (topPlayer.stats.pts2.made * (gameMode === '3x3' ? 1 : 2)) + (topPlayer.stats.pts3.made * (gameMode === '3x3' ? 2 : 3)) + topPlayer.stats.ft.made : 0;
+                  return pts > 0 ? (
+                    <div className="glass-card p-4 mx-1 mb-1 flex justify-between items-center bg-accent/5 border border-accent/20">
+                          <div>
+                              <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">
+                                  Cestinha
+                              </p>
+                              <p className="text-lg font-black text-text-primary tracking-tight">{topPlayer.name}</p>
+                          </div>
+                          <div className="text-right">
+                              <p className="text-3xl font-black text-accent tabular-nums">{pts}</p>
+                              <p className="text-[10px] font-bold text-text-secondary uppercase">PTS</p>
+                          </div>
+                    </div>
+                  ) : null;
+                })()}
                 <div className="flex items-center px-1">
                   <div className="flex gap-2 ml-auto">
                     {drawnTeams.length > 0 && (
@@ -1810,32 +1832,19 @@ export default function App() {
 
                 {/* Add Player Form */}
                 <div className="glass-card rounded-none p-4 flex flex-col gap-4 mx-1 relative overflow-visible">
-                  {players.length > 0 && (
-                    <motion.button
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      whileTap={{ scale: 0.9 }}
+                  <div className="flex gap-2 w-full">
+                    <motion.button 
                       onClick={() => setShowPlayersResetConfirm(true)}
-                      className="absolute -top-3 -right-2 w-8 h-8 bg-red-500 text-white rounded-none shadow-lg flex items-center justify-center z-10 hover:bg-red-600 transition-colors"
+                      disabled={players.length === 0}
+                      className={`h-11 w-11 flex items-center justify-center rounded-none border border-red-500/20 active:scale-95 transition-all ${
+                        players.length === 0 
+                          ? 'bg-red-500/5 text-red-500/30 cursor-not-allowed' 
+                          : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
+                      }`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </motion.button>
-                  )}
-                  
-                  <div className="flex gap-2 items-center">
-                    <input 
-                      type="text"
-                      maxLength={30}
-                      placeholder={`${t.nomeJogador}, ${t.numeroJogador || 'Nº'}`}
-                      className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-none px-4 py-3 text-sm font-semibold text-text-primary outline-accent placeholder:text-text-secondary/40"
-                      value={newPlayerName}
-                      onChange={(e) => setNewPlayerName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
-                    />
-                  </div>
 
-                  {/* Buttons Row Inside Card */}
-                  <div className="flex gap-2 w-full">
                     <motion.button 
                       onClick={handleDraft}
                       className="flex-1 h-11 text-[11px] font-bold text-accent uppercase tracking-widest bg-accent/10 rounded-none border border-accent/20 active:scale-95 transition-all flex items-center justify-center gap-2"
@@ -1851,6 +1860,18 @@ export default function App() {
                       <Plus className="w-3.5 h-3.5" />
                       {t.adicionarJogador}
                     </motion.button>
+                  </div>
+                  
+                  <div className="flex gap-2 items-center">
+                    <input 
+                      type="text"
+                      maxLength={30}
+                      placeholder={`${t.nomeJogador}, ${t.numeroJogador || 'Nº'}`}
+                      className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-none px-4 py-3 text-sm font-semibold text-text-primary outline-accent placeholder:text-text-secondary/40"
+                      value={newPlayerName}
+                      onChange={(e) => setNewPlayerName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
+                    />
                   </div>
                 </div>
 
